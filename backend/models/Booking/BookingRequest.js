@@ -1,17 +1,50 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const BookingRequestSchema = new mongoose.Schema({
-  patientId: { type: String, required: true }, // <-- changed to String
-  hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: true },
-  doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' },
-  testName: { type: String },
-  department: { type: String },
-  type: { type: String, enum: ['Appointment', 'LabTest'], required: true },
-  date: { type: String, required: true },
-  slot: { type: String, required: true }, // e.g. "10:00"
-  status: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' },
-  createdAt: { type: Date, default: Date.now }
-});
+const bookingRequestSchema = new mongoose.Schema(
+  {
+    patientId: {
+      type: String,
+      required: true,
+    },
+    hospitalId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hospital",
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["appointment", "labTest"],
+      required: true,
+    },
+    doctorName: {
+      type: String,
+      default: null,
+    },
+    testName: {
+      type: String,
+      default: null,
+    },
+    department: {
+      type: String,
+      required: true,
+    },
+    date: {
+      type: String,
+      required: true,
+      match: [/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD required)"],
+    },
+    time: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
+  },
+  { timestamps: true }
+);
 
-const BookingRequest = mongoose.model('BookingRequest', BookingRequestSchema);
+const BookingRequest = mongoose.model("BookingRequest", bookingRequestSchema);
 export default BookingRequest;

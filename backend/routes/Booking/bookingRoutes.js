@@ -1,27 +1,27 @@
-import express from 'express';
+import express from "express";
 import {
   createBookingRequest,
   getAllBookingRequests,
   getBookingsForHospital,
   getBookingsForPatient,
-  updateBookingStatus
-} from '../../controllers/Booking/bookingController.js';
+  updateBookingStatus,
+} from "../../controllers/Booking/bookingController.js";
 
 const router = express.Router();
 
-// Create new booking
-router.post('/', createBookingRequest);
+// Create a new booking request
+router.post("/", createBookingRequest);
 
-// Get all bookings
-router.get('/', getAllBookingRequests);
+// Get all bookings (for admin/debug)
+router.get("/", getAllBookingRequests);
 
-// Get bookings for hospital
-router.get('/hospital/:id', getBookingsForHospital);
+// Get bookings by hospital ID
+router.get("/hospital/:hospitalId", getBookingsForHospital);
 
-// Get bookings for patient
-router.get('/patient/:id', getBookingsForPatient);
+// Get bookings by patient ID
+router.get("/patient/:patientId", getBookingsForPatient);
 
-// Update booking status (accept/reject)
-router.put('/:id/status', updateBookingStatus);
+// Update booking status
+router.put("/:id/status", updateBookingStatus);
 
 export default router;

@@ -113,13 +113,13 @@ const LabTestDetail = () => {
   };
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const patientId = user?._id; // Use MongoDB ObjectId
+  const patientId = user?.patientId; // Use the custom patientId string
 
   const handleFinalBooking = () => {
     if (!selectedDate || !selectedTime || selectedSlotIndex === null) return;
     const test = testData[selectedSlotIndex];
     const bookingData = {
-      patientId, // Use ObjectId
+      patientId, // Use custom patientId string
       hospitalId,
       doctorId: null,
       testName: test.name,

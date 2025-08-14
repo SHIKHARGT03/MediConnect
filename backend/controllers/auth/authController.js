@@ -4,25 +4,22 @@ import User from '../../models/auth/userModel.js';
 import generateToken from '../../utils/generateToken.js';
 
 
+// @desc    Register user
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // ✅ Validate fields
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'All fields (name, email, password, role) are required' });
     }
 
-    // ✅ Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create new user
     const newUser = new User({
       name,
       email,
@@ -32,11 +29,10 @@ export const registerUser = async (req, res) => {
 
     await newUser.save();
 
-    // ✅ Generate token
     const token = generateToken(newUser._id, newUser.role);
 
-    // ✅ Return response
     return res.status(201).json({
+      patientId: newUser._id, // ✅ Added for frontend
       _id: newUser._id,
       name: newUser.name,
       email: newUser.email,
@@ -45,14 +41,12 @@ export const registerUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 Error during registration:", error); // Full log in backend
+    console.error("🔥 Error during registration:", error);
     return res.status(500).json({ message: 'Server error during registration' });
   }
 };
 
-
 // @desc    Login user
-// @route   POST /api/auth/login
 export const loginUser = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -72,9 +66,6 @@ export const loginUser = async (req, res) => {
       return res.status(403).json({ message: `Access denied. This user is not a ${role}.` });
     }
 
-    console.log("➡️  Plain password:", password);
-    console.log("➡️  Hashed password in DB:", user.password);
-
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("🔐 Password match result:", isMatch);
 
@@ -87,6 +78,7 @@ export const loginUser = async (req, res) => {
     console.log("✅ Token generated");
 
     res.status(200).json({
+      patientId: user._id, // ✅ Added for frontend
       _id: user._id,
       name: user.name,
       email: user.email,
