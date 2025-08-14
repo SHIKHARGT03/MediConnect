@@ -19,7 +19,7 @@ const departmentTests = {
   Pathology: ["Blood Test", "Urine Test"],
   Radiology: ["X-Ray", "MRI Scan"],
   Cardiology: ["ECG", "Echo Test"],
-  Neurology: ["EEG", "Nerve Test"]
+  Neurology: ["EEG", "Nerve Test"],
 };
 
 const testIcons = {
@@ -30,7 +30,7 @@ const testIcons = {
   "ECG": <FaHeartbeat />,
   "Echo Test": <FaHeartbeat />,
   "EEG": <FaSyringe />,
-  "Nerve Test": <FaSyringe />
+  "Nerve Test": <FaSyringe />,
 };
 
 const testPrices = {
@@ -41,7 +41,7 @@ const testPrices = {
   "ECG": 1037,
   "Echo Test": 687,
   "EEG": 1712,
-  "Nerve Test": 452
+  "Nerve Test": 452,
 };
 
 const packages = [
@@ -61,7 +61,15 @@ const packages = [
   {
     title: "Total Health+",
     price: 1999,
-    tests: ["Blood Test", "Urine Test", "Liver Function", "Sugar", "Vitamin D", "ECG", "Thyroid"],
+    tests: [
+      "Blood Test",
+      "Urine Test",
+      "Liver Function",
+      "Sugar",
+      "Vitamin D",
+      "ECG",
+      "Thyroid",
+    ],
     benefits: ["3 Free Follow-up Consultations"],
   },
 ];
@@ -70,12 +78,17 @@ const LabTestDetail = () => {
   const { hospitalId } = useParams();
   const [hospital, setHospital] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
+
+  // Selection states
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState(null); // for individual test card
+  const [selectedPackageIndex, setSelectedPackageIndex] = useState(null); // for package card
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
-  const [selectedPackageIndex, setSelectedPackageIndex] = useState(null);
+  // ISO date min (YYYY-MM-DD)
+  const today = new Date().toISOString().split("T")[0];
 
+  // Carousel
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % 10);
@@ -83,6 +96,7 @@ const LabTestDetail = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Mock hospital (as in your file)
   useEffect(() => {
     setHospital({
       name: "Generic Hospital Name",
@@ -112,42 +126,83 @@ const LabTestDetail = () => {
     setSelectedTime("");
   };
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const patientId = user?.patientId; // Use the custom patientId string
+  // ✅ Patient ID retrieval aligned with Hospital flow
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const patientId = storedUser?.patientId || storedUser?._id || null;
 
-  const handleFinalBooking = () => {
-    if (!selectedDate || !selectedTime || selectedSlotIndex === null) return;
-    const test = testData[selectedSlotIndex];
-    const bookingData = {
-      patientId, // Use custom patientId string
-      hospitalId,
-      doctorId: null,
-      testName: test.name,
-      department: test.department,
-      type: "LabTest",
-      date: selectedDate,
-      slot: selectedTime,
-      status: "Pending"
-    };
+  // Common builder to validate & send booking
+  const submitBooking = (bookingData) => {
+    // Validate required fields (mirrors Hospital flow)
+    const missingFields = Object.entries(bookingData)
+      .filter(([key, value]) => {
+        // allow doctorName to be null for lab tests
+        if (key === "doctorName") return false;
+        // allow testName to be null for doctor appointment (not our case here, but safe)
+        if (key === "testName") return !value;
+        return !value;
+      })
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      alert(`Missing fields: ${missingFields.join(", ")}`);
+      return;
+    }
+
     createBookingRequest(bookingData)
       .then(() => {
         alert("Booking request sent!");
         setSelectedSlotIndex(null);
+        setSelectedPackageIndex(null);
         setSelectedDate("");
         setSelectedTime("");
       })
       .catch((err) => {
-        const errorData = err.response?.data;
-        if (errorData?.missingFields) {
-          alert(
-            "Failed to book lab test. Missing fields: " +
-              errorData.missingFields.map(f => f.field).join(", ")
-          );
-        } else {
-          alert("Failed to book lab test.");
-        }
-        console.error("Booking error:", errorData || err.message);
+        console.error(
+          "❌ Booking error:",
+          err?.response?.data || err.message || err
+        );
+        alert("Failed to book lab test.");
       });
+  };
+
+  // Final booking handler (works for both individual test and package)
+  const handleFinalBooking = () => {
+    if (!selectedDate || !selectedTime) return;
+
+    let bookingData = null;
+
+    if (selectedSlotIndex !== null) {
+      // Individual test booking
+      const test = testData[selectedSlotIndex];
+      bookingData = {
+        patientId,
+        hospitalId,
+        type: "labTest", // ✅ matches enum
+        doctorName: null,
+        testName: test?.name || null, // ✅ use test name
+        department: test?.department || "Lab",
+        date: selectedDate, // ✅ already YYYY-MM-DD
+        time: selectedTime, // ✅ field name is "time"
+        status: "pending", // ✅ lowercase like Hospital
+      };
+    } else if (selectedPackageIndex !== null) {
+      // Package booking
+      const pkg = packages[selectedPackageIndex];
+      bookingData = {
+        patientId,
+        hospitalId,
+        type: "labTest",
+        doctorName: null,
+        testName: `Package: ${pkg?.title || "Health Package"}`, // ✅ store package as testName
+        department: "Lab Package",
+        date: selectedDate,
+        time: selectedTime,
+        status: "pending",
+      };
+    }
+
+    if (!bookingData) return;
+    submitBooking(bookingData);
   };
 
   return (
@@ -176,7 +231,9 @@ const LabTestDetail = () => {
           }}
         >
           <h2 style={{ fontSize: "2.5rem" }}>Get your all test at</h2>
-          <h1 style={{ fontSize: "3.5rem", fontWeight: "bold" }}>{hospital?.name}</h1>
+          <h1 style={{ fontSize: "3.5rem", fontWeight: "bold" }}>
+            {hospital?.name}
+          </h1>
         </div>
       </div>
 
@@ -189,7 +246,9 @@ const LabTestDetail = () => {
                 <div className="card h-100 shadow-sm">
                   <div className="card-body">
                     <h5 className="card-title d-flex align-items-center">
-                      <span className="me-2 text-purple fs-4">{testIcons[test.name]}</span>
+                      <span className="me-2 text-purple fs-4">
+                        {testIcons[test.name]}
+                      </span>
                       <span className="fw-bold fs-5">{test.name}</span>
                     </h5>
                     <p className="mb-1 text-muted">{test.department}</p>
@@ -208,21 +267,23 @@ const LabTestDetail = () => {
                           <span className="input-group-text bg-white">
                             <FaCalendarAlt />
                           </span>
+                          {/* ✅ Switch to ISO date input to satisfy backend regex */}
                           <input
-                            type="text"
-                            placeholder="DD/MM"
+                            type="date"
                             className="form-control"
                             value={selectedDate}
+                            min={today}
                             onChange={(e) => setSelectedDate(e.target.value)}
                           />
-                          <span className="input-group-text">/2025</span>
                         </div>
                         <div className="d-flex justify-content-between flex-wrap gap-2 mb-2">
                           {["9:00", "10:00", "11:00", "12:00"].map((time) => (
                             <button
                               key={time}
                               className={`btn btn-sm ${
-                                selectedTime === time ? "bg-danger text-white" : "bg-white text-danger"
+                                selectedTime === time
+                                  ? "bg-danger text-white"
+                                  : "bg-white text-danger"
                               } border border-danger`}
                               onClick={() => setSelectedTime(time)}
                             >
@@ -252,38 +313,47 @@ const LabTestDetail = () => {
         </div>
       </div>
 
-      {/* Health Packages Section - Enhanced Styling */}
-      <div style={{ backgroundColor: "#f8f9fa", padding: "60px 0", width: "100%" }}>
+      {/* Health Packages Section */}
+      <div
+        style={{ backgroundColor: "#f8f9fa", padding: "60px 0", width: "100%" }}
+      >
         <div className="container">
-          <h2 className="text-center mb-5 fw-bold" style={{ fontSize: "2.2rem", color: "#333" }}>
+          <h2
+            className="text-center mb-5 fw-bold"
+            style={{ fontSize: "2.2rem", color: "#333" }}
+          >
             Full Body Health Checkup Packages
           </h2>
           <div className="row justify-content-center">
             {packages.map((pkg, index) => (
               <div className="col-md-4 mb-4" key={index}>
-                <div 
-                  className="card h-100 border-0 d-flex flex-column" 
+                <div
+                  className="card h-100 border-0 d-flex flex-column"
                   style={{
                     borderRadius: "12px",
                     overflow: "hidden",
                     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
                     transition: "transform 0.3s",
-                    transform: selectedPackageIndex === index ? "translateY(-10px)" : "none",
+                    transform:
+                      selectedPackageIndex === index ? "translateY(-10px)" : "none",
                     minHeight: 520,
                     display: "flex",
-                    flexDirection: "column"
+                    flexDirection: "column",
                   }}
                 >
                   {/* Card Header */}
-                  <div 
-                    className="card-header border-0 py-4 text-center" 
+                  <div
+                    className="card-header border-0 py-4 text-center"
                     style={{
                       backgroundColor: "#6f42c1",
                       color: "white",
                       borderBottom: "1px solid rgba(0,0,0,0.05)",
                     }}
                   >
-                    <h3 className="mb-0 fw-bold" style={{ fontSize: "1.5rem", color: "white" }}>
+                    <h3
+                      className="mb-0 fw-bold"
+                      style={{ fontSize: "1.5rem", color: "white" }}
+                    >
                       {pkg.title}
                     </h3>
                   </div>
@@ -293,10 +363,10 @@ const LabTestDetail = () => {
                       Rs {pkg.price}/-
                     </h2>
                     {pkg.popular && (
-                      <span 
-                        className="badge rounded-pill mt-2" 
-                        style={{ 
-                          backgroundColor: "#6f42c1", 
+                      <span
+                        className="badge rounded-pill mt-2"
+                        style={{
+                          backgroundColor: "#6f42c1",
                           color: "white",
                           padding: "5px 15px",
                           fontSize: "0.8rem",
@@ -312,14 +382,22 @@ const LabTestDetail = () => {
                     <ul className="list-unstyled mb-4">
                       {pkg.tests.map((test, i) => (
                         <li key={i} className="d-flex align-items-center mb-3">
-                          <FaCheckCircle className="text-success me-2" style={{ flexShrink: 0 }} />
+                          <FaCheckCircle
+                            className="text-success me-2"
+                            style={{ flexShrink: 0 }}
+                          />
                           <span>{test}</span>
                         </li>
                       ))}
                       {pkg.benefits.map((benefit, i) => (
                         <li key={i} className="d-flex align-items-center mb-3">
-                          <FaGift className="text-primary me-2" style={{ flexShrink: 0 }} />
-                          <span className="text-primary fw-semibold">{benefit}</span>
+                          <FaGift
+                            className="text-primary me-2"
+                            style={{ flexShrink: 0 }}
+                          />
+                          <span className="text-primary fw-semibold">
+                            {benefit}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -327,7 +405,7 @@ const LabTestDetail = () => {
                       {/* Button */}
                       <button
                         className="btn w-100 py-3 fw-bold text-white mt-auto"
-                        style={{ 
+                        style={{
                           backgroundColor: "#6f42c1",
                           borderRadius: "5px",
                           transition: "all 0.3s",
@@ -343,20 +421,24 @@ const LabTestDetail = () => {
                             <span className="input-group-text bg-white">
                               <FaCalendarAlt />
                             </span>
+                            {/* ✅ ISO date input */}
                             <input
-                              type="text"
-                              placeholder="DD/MM"
+                              type="date"
                               className="form-control"
                               value={selectedDate}
+                              min={today}
                               onChange={(e) => setSelectedDate(e.target.value)}
                             />
-                            <span className="input-group-text">/2025</span>
                           </div>
                           <div className="d-flex justify-content-between flex-wrap gap-2 mb-3">
                             {["9:00", "10:00", "11:00", "12:00"].map((time) => (
                               <button
                                 key={time}
-                                className={`btn ${selectedTime === time ? "btn-primary" : "btn-outline-primary"}`}
+                                className={`btn ${
+                                  selectedTime === time
+                                    ? "btn-primary"
+                                    : "btn-outline-primary"
+                                }`}
                                 style={{ flex: 1, minWidth: "60px" }}
                                 onClick={() => setSelectedTime(time)}
                               >
@@ -367,7 +449,8 @@ const LabTestDetail = () => {
                           <button
                             className="btn w-100 py-2 fw-bold"
                             style={{
-                              backgroundColor: selectedDate && selectedTime ? "#6f42c1" : "#ccc",
+                              backgroundColor:
+                                selectedDate && selectedTime ? "#6f42c1" : "#ccc",
                               color: "white",
                             }}
                             disabled={!selectedDate || !selectedTime}
