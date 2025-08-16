@@ -1,4 +1,5 @@
 import BookingRequest from "../../models/Booking/BookingRequest.js";
+import User from "../../models/auth/userModel.js";
 
 /**
  * @desc    Create a new booking request
@@ -7,8 +8,26 @@ import BookingRequest from "../../models/Booking/BookingRequest.js";
  */
 export const createBookingRequest = async (req, res) => {
   try {
+    // You must have authentication middleware that sets req.user._id
+    // If not, fallback to patientId from body (for now)
+    let patientId = null;
+    if (req.user && req.user._id) {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      patientId = user.patientId; // Always use the generated patientId
+    } else if (req.body.patientId) {
+      // fallback for unauthenticated requests (not recommended)
+      const user = await User.findOne({ patientId: req.body.patientId });
+      patientId = user ? user.patientId : null;
+    }
+
+    if (!patientId) {
+      return res.status(400).json({ message: "Missing or invalid patientId" });
+    }
+
     const {
-      patientId,
       hospitalId,
       type,
       doctorName,
@@ -19,7 +38,7 @@ export const createBookingRequest = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!patientId || !hospitalId || !type || !department || !date || !time) {
+    if (!hospitalId || !type || !department || !date || !time) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -31,14 +50,15 @@ export const createBookingRequest = async (req, res) => {
     }
 
     const newBooking = new BookingRequest({
-      patientId,
+      patientId, // always the generated one
       hospitalId,
       type,
       doctorName: doctorName || null,
       testName: testName || null,
       department,
-      date, // <-- use the string directly
+      date,
       time,
+      status: "pending",
     });
 
     await newBooking.save();

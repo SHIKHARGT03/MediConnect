@@ -15,9 +15,9 @@ const HospitalDetail = () => {
   const [selectedDate, setSelectedDate] = useState({});
   const [selectedSlot, setSelectedSlot] = useState({});
 
-  // ✅ Patient ID fix — ensure correct patient ID is taken from localStorage
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const patientId = storedUser?.patientId || storedUser?._id || null;
+  // Always get patientId like this:
+  const storedUser = JSON.parse(localStorage.getItem("userInfo") || localStorage.getItem("user"));
+  const patientId = storedUser?.patientId || null;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -90,8 +90,8 @@ const HospitalDetail = () => {
   // ✅ Updated booking function as per your prompt
   const handleBookSlot = (doctor, index) => {
     const bookingData = {
-      patientId: patientId,
-      hospitalId: hospital?._id || hospitalId,
+      patientId, // always the generated one, never _id
+      hospitalId: hospital?.hospitalId || hospitalId, // use the correct hospitalId
       department: doctor?.department || selectedDepartment,
       doctorName: doctor?.name || "Dr. Rakesh Sharma",
       type: "appointment",

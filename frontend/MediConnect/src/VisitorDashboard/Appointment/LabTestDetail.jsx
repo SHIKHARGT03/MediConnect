@@ -126,9 +126,9 @@ const LabTestDetail = () => {
     setSelectedTime("");
   };
 
-  // ✅ Patient ID retrieval aligned with Hospital flow
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  const patientId = storedUser?.patientId || storedUser?._id || null;
+  // Always get patientId like this:
+  const storedUser = JSON.parse(localStorage.getItem("userInfo") || localStorage.getItem("user"));
+  const patientId = storedUser?.patientId || null;
 
   // Common builder to validate & send booking
   const submitBooking = (bookingData) => {
@@ -175,7 +175,7 @@ const LabTestDetail = () => {
       // Individual test booking
       const test = testData[selectedSlotIndex];
       bookingData = {
-        patientId,
+        patientId, // always the generated one, never _id
         hospitalId,
         type: "labTest", // ✅ matches enum
         doctorName: null,
@@ -189,7 +189,7 @@ const LabTestDetail = () => {
       // Package booking
       const pkg = packages[selectedPackageIndex];
       bookingData = {
-        patientId,
+        patientId, // always the generated one, never _id
         hospitalId,
         type: "labTest",
         doctorName: null,

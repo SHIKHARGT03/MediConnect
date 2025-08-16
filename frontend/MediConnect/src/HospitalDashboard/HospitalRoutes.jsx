@@ -15,7 +15,8 @@ const HospitalRoutes = () => {
       <Navbar />
       <div style={contentWrapperStyle}>
         <Routes>
-          <Route path="/hospital/dashboard" element={<Home />} />
+          <Route path="dashboard" element={<Home />} />
+
         </Routes>
       </div>
     </>

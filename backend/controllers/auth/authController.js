@@ -7,7 +7,7 @@ import generateToken from '../../utils/generateToken.js';
 // @desc    Register user
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, hospitalId } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'All fields (name, email, password, role) are required' });
@@ -25,6 +25,7 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      hospitalId: role === "hospital" ? hospitalId || null : null // ✅ store hospitalId if hospital
     });
 
     await newUser.save();
@@ -32,11 +33,12 @@ export const registerUser = async (req, res) => {
     const token = generateToken(newUser._id, newUser.role);
 
     return res.status(201).json({
-      patientId: newUser._id, // ✅ Added for frontend
+      patientId: newUser._id,
       _id: newUser._id,
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
+      hospitalId: newUser.hospitalId || null, // ✅ send hospitalId in response
       token,
     });
 
@@ -74,16 +76,14 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    const token = generateToken(user._id, user.role);
-    console.log("✅ Token generated");
-
     res.status(200).json({
-      patientId: user._id, // ✅ Added for frontend
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token,
+      hospitalId: user.hospitalId, // for hospitals
+      patientId: user.role === "visitor" ? user.patientId : null, // for visitors
+      token: generateToken(user._id, user.role),
     });
   } catch (error) {
     console.error("🔥 Server error during login:", error);

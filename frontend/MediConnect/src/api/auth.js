@@ -9,8 +9,11 @@ const API = axios.create({
 export const registerUser = async (formData) => {
   const res = await API.post("/auth/register", formData);
   if (res.data) {
-    // Save user to localStorage
-    localStorage.setItem("user", JSON.stringify(res.data));
+    if (res.data.role === "hospital") {
+      localStorage.setItem("hospitalInfo", JSON.stringify(res.data)); // ✅ hospital
+    } else {
+      localStorage.setItem("userInfo", JSON.stringify(res.data)); // ✅ patient/visitor
+    }
   }
   return res;
 };
@@ -18,13 +21,17 @@ export const registerUser = async (formData) => {
 export const loginUser = async (formData) => {
   const res = await API.post("/auth/login", formData);
   if (res.data) {
-    // Save user to localStorage
-    localStorage.setItem("user", JSON.stringify(res.data));
+    if (res.data.role === "hospital") {
+      localStorage.setItem("hospitalInfo", JSON.stringify(res.data)); // ✅ hospital
+    } else {
+      localStorage.setItem("userInfo", JSON.stringify(res.data)); // ✅ patient/visitor
+    }
   }
   return res;
 };
 
 export const logoutUser = () => {
-  localStorage.removeItem("user");
+  localStorage.removeItem("userInfo");
+  localStorage.removeItem("hospitalInfo"); // ✅ clear hospital login too
   return API.post("/auth/logout");
 };
