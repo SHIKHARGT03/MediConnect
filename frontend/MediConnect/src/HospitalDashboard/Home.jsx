@@ -285,13 +285,13 @@ const Home = () => {
                     <div className="req-actions">
                       <button
                         className="btn-accept"
-                        onClick={() => updateStatus(req._id, "accepted")}
+                        onClick={() => updateStatus(req.bookingId, "accepted")}
                       >
                         Accept
                       </button>
                       <button
                         className="btn-reject"
-                        onClick={() => updateStatus(req._id, "rejected")}
+                        onClick={() => updateStatus(req.bookingId, "rejected")}
                       >
                         Reject
                       </button>

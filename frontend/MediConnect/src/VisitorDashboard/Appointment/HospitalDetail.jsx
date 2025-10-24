@@ -4,6 +4,8 @@ import { getDoctorsByDepartment } from "../../api/doctor";
 import axios from "axios";
 import { FaCalendarAlt } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
+import { v4 as uuidv4 } from "uuid";
+
 
 const HospitalDetail = () => {
   const { hospitalId } = useParams();
@@ -89,36 +91,39 @@ const HospitalDetail = () => {
 
   // ✅ Updated booking function as per your prompt
   const handleBookSlot = (doctor, index) => {
-    const bookingData = {
-      patientId, // always the generated one, never _id
-      hospitalId: hospital?.hospitalId || hospitalId, // use the correct hospitalId
-      department: doctor?.department || selectedDepartment,
-      doctorName: doctor?.name || "Dr. Rakesh Sharma",
-      type: "appointment",
-      date: selectedDate[index], // already in YYYY-MM-DD
-      time: selectedSlot[index],
-      status: "pending",
-    };
-
-    console.log("📌 Booking data to send:", bookingData);
-
-    const missingFields = Object.entries(bookingData)
-      .filter(([_, value]) => !value)
-      .map(([key]) => key);
-
-    if (missingFields.length > 0) {
-      alert(`Missing fields: ${missingFields.join(", ")}`);
-      return;
-    }
-
-    createBookingRequest(bookingData)
-      .then((res) => {
-        alert("Booking request sent!");
-      })
-      .catch((err) => {
-        alert("Failed to book slot.");
-      });
+  const bookingData = {
+    patientId,
+    hospitalId: hospital?.hospitalId || hospitalId,
+    department: doctor?.department || selectedDepartment,
+    doctorName: doctor?.name || "Dr. Rakesh Sharma",
+    type: "appointment",
+    date: selectedDate[index],
+    time: selectedSlot[index],
+    status: "pending",
   };
+
+  console.log("📌 Booking data to send:", bookingData);
+
+  const missingFields = Object.entries(bookingData)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key);
+
+  if (missingFields.length > 0) {
+    alert(`Missing fields: ${missingFields.join(", ")}`);
+    return;
+  }
+
+  createBookingRequest(bookingData)
+    .then((res) => {
+      alert("Booking request sent! Your Booking ID: " + res.booking.bookingId);
+      // Optionally save bookingId to localStorage for later use
+      localStorage.setItem("lastBookingId", res.booking.bookingId);
+    })
+    .catch((err) => {
+      alert("Failed to book slot.");
+    });
+};
+
 
   return (
     <div>

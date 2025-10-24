@@ -20,16 +20,31 @@ const Navbar = () => {
 
       {/* Center - Navigation Links */}
       <div style={styles.center}>
-        <Link to="/hospital/dashboard" style={{ ...styles.link, ...(location.pathname === "/hospital/dashboard" ? styles.active : {}) }}>
+        <Link
+          to="/hospital/dashboard"
+          style={{ ...styles.link, ...(location.pathname === "/hospital/dashboard" ? styles.active : {}) }}
+        >
           Home
         </Link>
-        <Link to="/hospital/departments" style={{ ...styles.link, ...(location.pathname === "/hospital/departments" ? styles.active : {}) }}>
-          Departments
+
+        {/* Schedule tab instead of Departments */}
+        <Link
+          to="/hospital/schedule"
+          style={{ ...styles.link, ...(location.pathname === "/hospital/schedule" ? styles.active : {}) }}
+        >
+          Schedule
         </Link>
-        <Link to="/hospital/records" style={{ ...styles.link, ...(location.pathname === "/hospital/records" ? styles.active : {}) }}>
+
+        <Link
+          to="/hospital/records"
+          style={{ ...styles.link, ...(location.pathname === "/hospital/records" ? styles.active : {}) }}
+        >
           Medical Records
         </Link>
-        <Link to="/hospital/ml-predict" style={{ ...styles.link, ...(location.pathname === "/hospital/ml-predict" ? styles.active : {}) }}>
+        <Link
+          to="/hospital/ml-predict"
+          style={{ ...styles.link, ...(location.pathname === "/hospital/ml-predict" ? styles.active : {}) }}
+        >
           ML Prediction
         </Link>
       </div>
@@ -57,48 +72,13 @@ const styles = {
     left: 0,
     zIndex: 999,
   },
-  left: {
-    flex: 1,
-  },
-  center: {
-    flex: 2,
-    display: "flex",
-    justifyContent: "center",
-    gap: "40px",
-  },
-  right: {
-    flex: 1,
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  logo: {
-    fontSize: "1.8rem",
-    fontWeight: "700",
-    color: "#6f42c1",
-    textDecoration: "none",
-  },
-  link: {
-    textDecoration: "none",
-    color: "#000000",
-    fontSize: "1rem",
-    fontWeight: "400",
-    transition: "0.3s",
-    padding: "6px 10px",
-    borderRadius: "6px",
-  },
-  active: {
-    textDecoration: "underline",
-  },
-  logoutBtn: {
-    backgroundColor: "#dc3545",
-    color: "#ffffff",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "8px",
-    fontSize: "0.95rem",
-    fontWeight: "500",
-    cursor: "pointer",
-  },
+  left: { flex: 1 },
+  center: { flex: 2, display: "flex", justifyContent: "center", gap: "40px" },
+  right: { flex: 1, display: "flex", justifyContent: "flex-end" },
+  logo: { fontSize: "1.8rem", fontWeight: "700", color: "#6f42c1", textDecoration: "none" },
+  link: { textDecoration: "none", color: "#000000", fontSize: "1rem", fontWeight: "400", transition: "0.3s", padding: "6px 10px", borderRadius: "6px" },
+  active: { textDecoration: "underline" },
+  logoutBtn: { backgroundColor: "#dc3545", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "8px", fontSize: "0.95rem", fontWeight: "500", cursor: "pointer" },
 };
 
 export default Navbar;

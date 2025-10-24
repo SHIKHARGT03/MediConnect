@@ -4,7 +4,13 @@ import {
   getAllBookingRequests,
   getBookingsForHospital,
   getBookingsForPatient,
+  getBookingById,
   updateBookingStatus,
+  getUpcomingBookingsForPatient,
+  getPastBookingsForPatient,
+  createFollowUpBooking,   
+  getHospitalScheduleOverview,
+  getHospitalScheduleBookings,
 } from "../../controllers/Booking/bookingController.js";
 
 const router = express.Router();
@@ -12,16 +18,34 @@ const router = express.Router();
 // Create a new booking request
 router.post("/", createBookingRequest);
 
-// Get all bookings (for admin/debug)
+// Get all bookings (admin/debug)
 router.get("/", getAllBookingRequests);
 
 // Get bookings by hospital ID
 router.get("/hospital/:hospitalId", getBookingsForHospital);
 
-// Get bookings by patient ID
+// Get bookings by patient ID (all)
 router.get("/patient/:patientId", getBookingsForPatient);
 
-// Update booking status
-router.put("/:id/status", updateBookingStatus);
+// Get upcoming bookings for patient
+router.get("/patient/:patientId/upcoming", getUpcomingBookingsForPatient);
+
+// Get past bookings for patient
+router.get("/patient/:patientId/past", getPastBookingsForPatient);
+
+// Get booking by bookingId
+router.get("/:bookingId", getBookingById);
+
+// Update booking status (by bookingId)
+router.put("/:bookingId/status", updateBookingStatus);
+
+// Create follow-up booking
+router.post("/:bookingId/followup", createFollowUpBooking);
+
+// Overview (counts for hero section)
+router.get("/:hospitalId/overview", getHospitalScheduleOverview);
+
+// Filtered bookings list
+router.get("/:hospitalId/bookings", getHospitalScheduleBookings);
 
 export default router;
