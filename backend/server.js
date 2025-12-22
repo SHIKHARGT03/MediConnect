@@ -8,6 +8,7 @@ import authRoutes from './routes/auth/authRoutes.js';
 import hospitalRoutes from './routes/Hospital&Doctor/hospitalRoutes.js';
 import doctorRoutes from './routes/Hospital&Doctor/doctorRoutes.js';
 import bookingRoutes from "./routes/Booking/bookingRoutes.js";
+import prescriptionRoutes from "./routes/Prescription/prescriptionRoutes.js";
 
 dotenv.config();
 connectDB(); // MongoDB connection
@@ -36,6 +37,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/prescription", prescriptionRoutes);
+
 
 // Test route
 app.get('/', (req, res) => {

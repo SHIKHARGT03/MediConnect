@@ -143,6 +143,14 @@ export const getBookingById = async (req, res) => {
  */
 export const updateBookingStatus = async (req, res) => {
   try {
+    const { status } = req.body;
+
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        message: "Only accepted or rejected allowed",
+      });
+    }
+
     const booking = await BookingRequest.findOne({
       bookingId: req.params.bookingId,
     });
@@ -151,16 +159,22 @@ export const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    booking.status = req.body.status || booking.status;
+    if (booking.status !== "pending") {
+      return res.status(400).json({
+        message: "Only pending bookings can be updated",
+      });
+    }
+
+    booking.status = status;
     await booking.save();
 
-    res.json({
+    res.status(200).json({
       message: "Booking status updated",
       booking,
     });
-  } catch (error) {
-    console.error("Error updating booking status:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -326,4 +340,57 @@ export const getHospitalScheduleBookings = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+export const startVideoConsultation = async (req, res) => {
+  const booking = await BookingRequest.findOne({
+    bookingId: req.params.bookingId,
+  });
+
+  if (!booking) {
+    return res.status(404).json({ message: "Booking not found" });
+  }
+
+  if (booking.type !== "videoConsultation") {
+    return res.status(400).json({
+      message: "This booking is not a video consultation",
+    });
+  }
+
+  if (booking.status !== "accepted") {
+    return res.status(400).json({
+      message: "Booking must be accepted before starting call",
+    });
+  }
+
+  booking.status = "call_started";
+  await booking.save();
+
+  res.status(200).json({
+    message: "Video consultation started",
+    booking,
+  });
+};
+
+export const endVideoConsultation = async (req, res) => {
+  const booking = await BookingRequest.findOne({
+    bookingId: req.params.bookingId,
+  });
+
+  if (!booking)
+    return res.status(404).json({ message: "Booking not found" });
+
+  if (booking.status !== "call_started") {
+    return res.status(400).json({
+      message: "Call is not active",
+    });
+  }
+
+  booking.status = "completed";
+  await booking.save();
+
+  res.json({
+    message: "Video consultation completed",
+    booking,
+  });
 };

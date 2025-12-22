@@ -35,3 +35,24 @@ export const logoutUser = () => {
   localStorage.removeItem("hospitalInfo"); // ✅ clear hospital login too
   return API.post("/auth/logout");
 };
+
+// Helper: return a saved auth token.
+// Tries localStorage 'token' then userInfo/hospitalInfo objects.
+export const getAuthToken = () => {
+  try {
+    // direct token (some parts of app may have saved it)
+    const t = localStorage.getItem("token");
+    if (t) return t;
+
+    // fallback to user/hospital objects stored by login/register
+    const maybeUser = JSON.parse(localStorage.getItem("userInfo") || "null");
+    if (maybeUser && maybeUser.token) return maybeUser.token;
+
+    const maybeHospital = JSON.parse(localStorage.getItem("hospitalInfo") || "null");
+    if (maybeHospital && maybeHospital.token) return maybeHospital.token;
+
+    return null;
+  } catch (err) {
+    return null;
+  }
+};

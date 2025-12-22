@@ -1,4 +1,3 @@
-// frontend/src/Schedule/Past.jsx
 import React, { useEffect, useState } from "react";
 import {
   getPastBookingsForPatient,
@@ -9,12 +8,18 @@ import axios from "axios";
 const BRAND = "#6f42c1";
 const RED = "#dc3545";
 const GRADIENT = "linear-gradient(180deg, #f8f9fa 0%, #ececec 100%)";
+const API_BASE = "http://localhost:5000";
 
 const Past = ({ patientId }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [followUpLoading, setFollowUpLoading] = useState(null);
   const [hospitalNames, setHospitalNames] = useState({});
+
+  // Prescription modal
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [activePrescription, setActivePrescription] = useState(null);
+  const [prescriptionError, setPrescriptionError] = useState("");
 
   // -------- Load past bookings --------
   useEffect(() => {
@@ -32,13 +37,11 @@ const Past = ({ patientId }) => {
       .map((b) => b.hospitalId)
       .filter((id) => id && !hospitalNames[id]);
 
-    if (idsToFetch.length === 0) return;
+    if (!idsToFetch.length) return;
 
     idsToFetch.forEach(async (id) => {
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/hospitals/${id}`
-        );
+        const res = await axios.get(`${API_BASE}/api/hospitals/${id}`);
         setHospitalNames((prev) => ({ ...prev, [id]: res.data.name }));
       } catch {
         setHospitalNames((prev) => ({ ...prev, [id]: "Unknown Hospital" }));
@@ -47,20 +50,43 @@ const Past = ({ patientId }) => {
     // eslint-disable-next-line
   }, [bookings]);
 
-  // -------- Handle Follow-Up --------
+  // -------- View Prescription --------
+  const handleViewPrescription = async (bookingId) => {
+    try {
+      setPrescriptionError("");
+      const res = await axios.get(
+        `${API_BASE}/api/prescription/${bookingId}`,
+        { withCredentials: true }
+      );
+
+      setActivePrescription(res.data);
+      setShowPrescriptionModal(true);
+
+      // open file in new tab (view-only)
+      window.open(
+        `${API_BASE}/api/prescription/file/${bookingId}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } catch (err) {
+      setPrescriptionError("Prescription has not been sent by the hospital yet.");
+      setShowPrescriptionModal(true);
+    }
+  };
+
+  // -------- Follow-Up --------
   const handleFollowUp = async (bookingId) => {
     try {
       setFollowUpLoading(bookingId);
       await createFollowUpBooking(bookingId);
       alert("Follow-up booking created successfully!");
-    } catch (error) {
+    } catch {
       alert("Failed to create follow-up booking.");
     } finally {
       setFollowUpLoading(null);
     }
   };
 
-  // -------- UI --------
   return (
     <div
       style={{
@@ -75,7 +101,6 @@ const Past = ({ patientId }) => {
           fontWeight: 800,
           color: "#222",
           marginBottom: "40px",
-          letterSpacing: "1px",
         }}
       >
         Your Past Visits Records
@@ -101,105 +126,30 @@ const Past = ({ patientId }) => {
                   "0 4px 18px rgba(111,66,193,0.07), 0 1.5px 6px #e0e0e0",
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "stretch",
                 padding: "28px 32px",
                 marginBottom: "28px",
-                gap: "24px",
-                minHeight: "140px",
               }}
             >
-              {/* Left: Info */}
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  justifyContent: "center",
-                }}
-              >
-                <div>
-                  <span style={{ fontWeight: 700, color: "#222" }}>Type: </span>
-                  <span style={{ color: "#222" }}>
-                    {booking.type === "appointment"
-                      ? "Doctor Appointment"
-                      : "Lab Test"}
-                  </span>
-                </div>
-
-                <div>
-                  <span style={{ fontWeight: 700, color: "#222" }}>
-                    Hospital:{" "}
-                  </span>
-                  <span style={{ color: "#222" }}>
-                    {hospitalNames[booking.hospitalId] ||
-                      booking.hospitalId ||
-                      "-"}
-                  </span>
-                </div>
-
-                <div>
-                  <span style={{ fontWeight: 700, color: "#222" }}>
-                    Department:{" "}
-                  </span>
-                  <span style={{ color: "#222" }}>
-                    {booking.department || "-"}
-                  </span>
-                </div>
-
-                {booking.type === "appointment" ? (
-                  <div>
-                    <span style={{ fontWeight: 700, color: "#222" }}>
-                      Doctor:{" "}
-                    </span>
-                    <span style={{ color: "#222" }}>
-                      {booking.doctorName || "-"}
-                    </span>
-                  </div>
-                ) : (
-                  <div>
-                    <span style={{ fontWeight: 700, color: "#222" }}>
-                      Test:{" "}
-                    </span>
-                    <span style={{ color: "#222" }}>
-                      {booking.testName || "-"}
-                    </span>
-                  </div>
-                )}
-
-                <div>
-                  <span style={{ fontWeight: 700, color: "#222" }}>Date: </span>
-                  <span style={{ color: "#222" }}>
-                    {new Date(booking.date).toLocaleDateString()}
-                  </span>
-                </div>
+              {/* Info */}
+              <div>
+                <div><b>Type:</b> {booking.type === "appointment" ? "Doctor Appointment" : "Lab Test"}</div>
+                <div><b>Hospital:</b> {hospitalNames[booking.hospitalId]}</div>
+                <div><b>Department:</b> {booking.department || "-"}</div>
+                <div><b>Date:</b> {new Date(booking.date).toLocaleDateString()}</div>
               </div>
 
-              {/* Right: Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "flex-end",
-                  gap: "14px",
-                  minWidth: "170px",
-                }}
-              >
+              {/* Actions */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <button
                   style={{
                     background: BRAND,
                     color: "#fff",
                     border: "none",
-                    borderRadius: "8px",
-                    padding: "12px 22px",
+                    borderRadius: 8,
+                    padding: "10px 18px",
                     fontWeight: 700,
-                    fontSize: "1rem",
-                    marginBottom: "6px",
-                    boxShadow: "0 2px 8px rgba(111,66,193,0.09)",
-                    cursor: "pointer",
                   }}
-                  disabled={followUpLoading === booking.bookingId}
+                  onClick={() => handleViewPrescription(booking.bookingId)}
                 >
                   {booking.type === "appointment"
                     ? "View Prescription"
@@ -211,28 +161,74 @@ const Past = ({ patientId }) => {
                     background: RED,
                     color: "#fff",
                     border: "none",
-                    borderRadius: "8px",
-                    padding: "10px 22px",
+                    borderRadius: 8,
+                    padding: "10px 18px",
                     fontWeight: 700,
-                    fontSize: "1rem",
-                    boxShadow: "0 2px 8px rgba(220,53,69,0.09)",
-                    cursor: "pointer",
                     opacity: followUpLoading === booking.bookingId ? 0.7 : 1,
                   }}
                   onClick={() => handleFollowUp(booking.bookingId)}
                   disabled={followUpLoading === booking.bookingId}
                 >
-                  {followUpLoading === booking.bookingId ? (
-                    <span className="spinner-border spinner-border-sm" />
-                  ) : (
-                    "Follow Up"
-                  )}
+                  Follow Up
                 </button>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Prescription Note Modal */}
+      {showPrescriptionModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+          onClick={() => setShowPrescriptionModal(false)}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: 24,
+              borderRadius: 12,
+              width: 420,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h5 style={{ marginBottom: 12 }}>🩺 Doctor’s Note</h5>
+
+            {prescriptionError ? (
+              <p style={{ color: "#555" }}>{prescriptionError}</p>
+            ) : activePrescription?.note ? (
+              <p style={{ color: "#333", lineHeight: 1.5 }}>
+                {activePrescription.note}
+              </p>
+            ) : (
+              <p style={{ color: "#777" }}>No note provided by doctor.</p>
+            )}
+
+            <button
+              style={{
+                marginTop: 16,
+                background: BRAND,
+                color: "#fff",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: 8,
+                float: "right",
+              }}
+              onClick={() => setShowPrescriptionModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

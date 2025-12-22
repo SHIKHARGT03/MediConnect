@@ -27,10 +27,13 @@ const HospitalSection = ({ selectedToggle }) => {
 
   const handleBook = (id) => {
     if (selectedToggle === "lab") {
-      navigate(`/visitor/appointment/lab/${id}`);
-    } else {
-      navigate(`/visitor/appointment/hospital/${id}`);
-    }
+  navigate(`/visitor/book-appointment/lab/${id}`);
+} else if (selectedToggle === "video") {
+  navigate(`/visitor/book-appointment/video/${id}`);
+} else {
+  navigate(`/visitor/book-appointment/hospital/${id}`);
+}
+
   };
 
   return (

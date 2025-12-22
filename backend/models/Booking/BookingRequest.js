@@ -19,7 +19,7 @@ const bookingRequestSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["appointment", "labTest"],
+      enum: ["appointment", "labTest", "videoConsultation"],
       required: true,
     },
     doctorName: {
@@ -45,7 +45,14 @@ const bookingRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
+      enum: [
+        "pending",
+        "accepted",
+        "rejected",
+        "call_started",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
     },
   },

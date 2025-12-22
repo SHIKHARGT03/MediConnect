@@ -11,6 +11,8 @@ import {
   createFollowUpBooking,   
   getHospitalScheduleOverview,
   getHospitalScheduleBookings,
+  startVideoConsultation,
+  endVideoConsultation
 } from "../../controllers/Booking/bookingController.js";
 
 const router = express.Router();
@@ -47,5 +49,10 @@ router.get("/:hospitalId/overview", getHospitalScheduleOverview);
 
 // Filtered bookings list
 router.get("/:hospitalId/bookings", getHospitalScheduleBookings);
+
+router.put("/:bookingId/start-call", startVideoConsultation);
+
+router.put("/:bookingId/end-call", endVideoConsultation);
+
 
 export default router;

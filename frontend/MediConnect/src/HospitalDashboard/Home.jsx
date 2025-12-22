@@ -249,6 +249,8 @@ const Home = () => {
                             ? "Appointment"
                             : req.type === "labTest"
                             ? "Lab Test"
+                            :req.type === "videoConsultation"
+                            ? "Video Consultation"
                             : String(req.type || "").toUpperCase()}
                         </span>
                       </div>

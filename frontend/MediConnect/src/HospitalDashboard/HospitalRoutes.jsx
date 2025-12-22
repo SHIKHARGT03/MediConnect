@@ -3,7 +3,8 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./Navbar";
 import Home from "./Home";
-import Schedule from "./Schedule/Schedule"; // updated import
+import Schedule from "./Schedule/Schedule"; 
+import Video from "./Video/Video"; 
 
 const contentWrapperStyle = {
   paddingTop: "70px",
@@ -17,8 +18,8 @@ const HospitalRoutes = () => {
       <div style={contentWrapperStyle}>
         <Routes>
           <Route path="dashboard" element={<Home />} />
-          <Route path="schedule" element={<Schedule />} /> {/* now full schedule page */}
-          {/* future routes like Medical Records, ML, Video will go here */}
+          <Route path="schedule" element={<Schedule />} /> 
+          <Route path="video" element={<Video />} />
         </Routes>
       </div>
     </>

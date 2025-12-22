@@ -29,8 +29,8 @@ const Navbar = () => {
         <Link to="/visitor/schedule" style={{ ...styles.link, ...(location.pathname === "/visitor/schedule" ? styles.active : {}) }}>
           Schedule
         </Link>
-        <Link to="/visitor/records" style={{ ...styles.link, ...(location.pathname === "/visitor/records" ? styles.active : {}) }}>
-          Medical Records
+        <Link to="/visitor/records" style={{ ...styles.link, ...(location.pathname === "/visitor/video" ? styles.active : {}) }}>
+          Video Consultation
         </Link>
       </div>
 

@@ -36,10 +36,10 @@ const Navbar = () => {
         </Link>
 
         <Link
-          to="/hospital/records"
-          style={{ ...styles.link, ...(location.pathname === "/hospital/records" ? styles.active : {}) }}
+          to="/hospital/video"
+          style={{ ...styles.link, ...(location.pathname === "/hospital/video" ? styles.active : {}) }}
         >
-          Medical Records
+          Video Consultation
         </Link>
         <Link
           to="/hospital/ml-predict"
