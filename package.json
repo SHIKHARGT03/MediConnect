@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "crypto": "^1.0.1",
-    "react-redux": "^9.2.0",
-    "uuid": "^11.1.0"
-  }
-}
