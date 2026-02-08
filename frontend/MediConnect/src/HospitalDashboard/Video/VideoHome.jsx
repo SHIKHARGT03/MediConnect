@@ -1,6 +1,12 @@
+// src/HospitalDashboard/Video/VideoHome.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import {
+  emitCallStarted,
+  connectSocket,
+} from "../../socket/video.socket";
+import { useNavigate } from "react-router-dom";
 
 const API = axios.create({
   baseURL: "http://localhost:5000/api",
@@ -12,7 +18,10 @@ const VideoHome = () => {
   const [token, setToken] = useState("");
   const [videoCalls, setVideoCalls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [startingId, setStartingId] = useState(null);
+  const navigate = useNavigate();
 
+  // 🔐 Read hospital auth
   useEffect(() => {
     const raw =
       localStorage.getItem("hospitalInfo") ||
@@ -25,9 +34,13 @@ const VideoHome = () => {
       const parsed = JSON.parse(raw);
       setHospitalId(parsed.hospitalId);
       setToken(parsed.token);
-    } catch (_) {}
+    } catch (err) {
+      console.error("Error parsing hospital info:", err);
+    }
+
   }, []);
 
+  // 📡 Fetch accepted video consultations
   useEffect(() => {
     if (!hospitalId) return;
 
@@ -59,6 +72,33 @@ const VideoHome = () => {
     fetchVideoCalls();
   }, [hospitalId, token]);
 
+  // ▶️ Start Call (Hospital Only)
+  const handleStartCall = async (bookingId) => {
+    try {
+      setStartingId(bookingId);
+
+      // 1️⃣ Connect socket & emit event
+      connectSocket();
+      emitCallStarted(bookingId);
+
+      // 2️⃣ Update backend status → call_started
+      await API.put(
+        `/bookings/${bookingId}/start-call`,
+        {},
+        token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : undefined
+      );
+
+      // 3️⃣ Navigate doctor to call room
+      navigate(`/hospital/video/call/${bookingId}`);
+    } catch (err) {
+      console.error("Failed to start call:", err);
+    } finally {
+      setStartingId(null);
+    }
+  };
+
   return (
     <div style={styles.page}>
       {/* HERO */}
@@ -77,7 +117,7 @@ const VideoHome = () => {
         ) : (
           <div style={styles.cardsWrapper}>
             {videoCalls.map((call) => (
-              <div key={call._id} style={styles.card}>
+              <div key={call.bookingId} style={styles.card}>
                 {/* LEFT */}
                 <div style={styles.left}>
                   <Info label="Patient ID" value={call.patientId} />
@@ -89,7 +129,15 @@ const VideoHome = () => {
 
                 {/* RIGHT */}
                 <div style={styles.right}>
-                  <button style={styles.startBtn}>Start Call</button>
+                  <button
+                    style={styles.startBtn}
+                    disabled={startingId === call.bookingId}
+                    onClick={() => handleStartCall(call.bookingId)}
+                  >
+                    {startingId === call.bookingId
+                      ? "Starting…"
+                      : "Start Call"}
+                  </button>
                 </div>
               </div>
             ))}
@@ -103,21 +151,25 @@ const VideoHome = () => {
 const Info = ({ label, value }) => (
   <div style={styles.row}>
     <span style={styles.label}>{label}:</span>
-    <span style={styles.value}>{value}</span>
+    <span style={styles.value}>{value || "—"}</span>
   </div>
 );
 
 const styles = {
-  
-
+  page: {
+    width: "100vw",
+    minHeight: "100vh",
+  },
   hero: {
     width: "100vw",
     minHeight: "50vh",
     background: "linear-gradient(135deg, #fafdff 0%, #eaf3fa 100%)",
     display: "flex",
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: "60px 24px",
+    padding: "50px 20px",
+    textAlign: "center",
     boxSizing: "border-box",
   },
 
@@ -137,7 +189,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "28px",
-    maxWidth: "1400px", // prevents over-stretching
+    maxWidth: "1400px",
   },
 
   card: {

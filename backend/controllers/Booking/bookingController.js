@@ -1,6 +1,8 @@
 import BookingRequest from "../../models/Booking/BookingRequest.js";
 import User from "../../models/auth/userModel.js";
 import moment from "moment";
+import { getIO } from "../../socket/index.js";
+
 
 /**
  * @desc    Create a new booking request
@@ -168,6 +170,13 @@ export const updateBookingStatus = async (req, res) => {
     booking.status = status;
     await booking.save();
 
+    // 🔔 SOCKET EVENT
+    const io = getIO();
+    io.to(booking.bookingId).emit("booking-status-updated", {
+      bookingId: booking.bookingId,
+      status: booking.status,
+    });
+
     res.status(200).json({
       message: "Booking status updated",
       booking,
@@ -177,6 +186,7 @@ export const updateBookingStatus = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 /**
  * @desc    Get upcoming bookings for a patient
@@ -366,6 +376,12 @@ export const startVideoConsultation = async (req, res) => {
   booking.status = "call_started";
   await booking.save();
 
+  // 🔔 SOCKET EVENT
+  const io = getIO();
+  io.to(booking.bookingId).emit("call-started", {
+    bookingId: booking.bookingId,
+  });
+
   res.status(200).json({
     message: "Video consultation started",
     booking,
@@ -389,8 +405,15 @@ export const endVideoConsultation = async (req, res) => {
   booking.status = "completed";
   await booking.save();
 
+  // 🔔 SOCKET EVENT
+  const io = getIO();
+  io.to(booking.bookingId).emit("call-ended", {
+    bookingId: booking.bookingId,
+  });
+
   res.json({
     message: "Video consultation completed",
     booking,
   });
 };
+

@@ -69,6 +69,7 @@ const Past = ({ patientId }) => {
         "noopener,noreferrer"
       );
     } catch (err) {
+      console.error("Error fetching prescription:", err);
       setPrescriptionError("Prescription has not been sent by the hospital yet.");
       setShowPrescriptionModal(true);
     }

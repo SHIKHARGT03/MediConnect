@@ -1,21 +1,54 @@
-import React from "react";
+// src/VisitorDashboard/Video/Upcoming.jsx
+import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { getBookingsForPatient } from "../../api/booking";
+import { useVideoSocket } from "../../socket/useVideoSocket";
+import { useNavigate } from "react-router-dom";
 
 const Upcoming = () => {
-  // 🔁 TEMP DATA (will come from API later)
-  const upcomingCalls = [
-    {
-      id: "1",
-      hospital: "MediCare Multispeciality",
-      doctor: "Dr. Vanessa Hansen",
-      department: "General OPD",
-      date: "2025-01-10",
-      time: "11:30 AM",
-      callStarted: false, // doctor not joined yet
-    },
-  ];
+  const [calls, setCalls] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (upcomingCalls.length === 0) {
+  const storedUser = JSON.parse(
+    localStorage.getItem("userInfo") || localStorage.getItem("user")
+  );
+  const patientId = storedUser?.patientId;
+
+  // 🔹 Fetch accepted video consultations
+  useEffect(() => {
+    if (!patientId) return;
+
+    const fetchCalls = async () => {
+      try {
+        const data = await getBookingsForPatient(patientId);
+
+        const filtered = (Array.isArray(data) ? data : []).filter(
+          (b) =>
+            b.type === "videoConsultation" &&
+            (b.status || "").toLowerCase() === "accepted"
+        );
+
+        setCalls(filtered);
+      } catch (err) {
+        console.error("Error fetching video calls:", err);
+        setCalls([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCalls();
+  }, [patientId]);
+
+  if (loading) {
+    return (
+      <div style={styles.emptyWrapper}>
+        <h4 style={styles.emptyText}>Loading video calls…</h4>
+      </div>
+    );
+  }
+
+  if (calls.length === 0) {
     return (
       <div style={styles.emptyWrapper}>
         <h4 style={styles.emptyText}>No video calls scheduled</h4>
@@ -25,47 +58,67 @@ const Upcoming = () => {
 
   return (
     <div className="container d-flex flex-column gap-4">
-      {upcomingCalls.map((call) => (
-        <div key={call.id} style={styles.card}>
-          {/* LEFT INFO */}
-          <div style={styles.left}>
-            <div style={styles.row}>
-              <span style={styles.label}>Hospital:</span>
-              <span style={styles.value}>{call.hospital}</span>
-            </div>
-            <div style={styles.row}>
-              <span style={styles.label}>Doctor:</span>
-              <span style={styles.value}>{call.doctor}</span>
-            </div>
-            <div style={styles.row}>
-              <span style={styles.label}>Department:</span>
-              <span style={styles.value}>{call.department}</span>
-            </div>
-            <div style={styles.row}>
-              <span style={styles.label}>Date:</span>
-              <span style={styles.value}>{call.date}</span>
-            </div>
-            <div style={styles.row}>
-              <span style={styles.label}>Time:</span>
-              <span style={styles.value}>{call.time}</span>
-            </div>
-          </div>
-
-          {/* RIGHT ACTION */}
-          <div style={styles.right}>
-            {call.callStarted ? (
-              <button style={styles.joinBtn}>Join Call</button>
-            ) : (
-              <div style={styles.waitingText}>
-                Waiting for doctor to join
-              </div>
-            )}
-          </div>
-        </div>
+      {calls.map((call) => (
+        <VideoCallCard key={call.bookingId} call={call} />
       ))}
     </div>
   );
 };
+
+export default Upcoming;
+
+/* ------------------------------------------------------------------ */
+/* ---------------------- CARD WITH SOCKET --------------------------- */
+/* ------------------------------------------------------------------ */
+
+const VideoCallCard = ({ call }) => {
+  const { callStarted } = useVideoSocket({
+    bookingId: call.bookingId,
+    role: "patient",
+  });
+
+  const navigate = useNavigate();
+
+  return (
+    <div style={styles.card}>
+      {/* LEFT INFO */}
+      <div style={styles.left}>
+        <Info label="Hospital:" value={call.hospitalName || "Hospital"} />
+        <Info label="Doctor:" value={call.doctorName} />
+        <Info label="Department:" value={call.department} />
+        <Info label="Date:" value={call.date} />
+        <Info label="Time:" value={call.time} />
+      </div>
+
+      {/* RIGHT ACTION */}
+      <div style={styles.right}>
+        {callStarted ? (
+          <button
+            style={styles.joinBtn}
+            onClick={() => navigate(`/visitor/records/call/${call.bookingId}`)}
+          >
+            Join Call
+          </button>
+        ) : (
+          <div style={styles.waitingText}>
+            Waiting for doctor to join
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Info = ({ label, value }) => (
+  <div style={styles.row}>
+    <span style={styles.label}>{label}</span>
+    <span style={styles.value}>{value || "—"}</span>
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* ----------------------------- STYLES ------------------------------ */
+/* ------------------------------------------------------------------ */
 
 const styles = {
   card: {
@@ -76,6 +129,7 @@ const styles = {
     justifyContent: "space-between",
     gap: "20px",
     boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+    flexWrap: "wrap",
   },
 
   left: {
@@ -135,5 +189,3 @@ const styles = {
     color: "#666",
   },
 };
-
-export default Upcoming;

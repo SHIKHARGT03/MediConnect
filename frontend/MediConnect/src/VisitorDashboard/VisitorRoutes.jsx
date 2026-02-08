@@ -5,6 +5,7 @@ import Home from "./Home/Home";
 import Appointment from "./Appointment/Appointment";
 import Schedule from "./Schedule/Schedule";
 import Video from "./Video/Video";
+import CallRoom from "./Video/CallRoom";
 
 const contentWrapperStyle = {
   paddingTop: "70px",
@@ -21,6 +22,8 @@ const VisitorRoutes = () => {
           <Route path="book-appointment/*" element={<Appointment />} />
           <Route path="schedule" element={<Schedule />} />
           <Route path="records" element={<Video />} />
+          {/* New route for patient's call room */}
+          <Route path="records/call/:bookingId" element={<CallRoom />} />
         </Routes>
       </div>
     </>

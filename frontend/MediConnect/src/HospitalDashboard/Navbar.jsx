@@ -43,7 +43,7 @@ const Navbar = () => {
         </Link>
         <Link
           to="/hospital/ml-predict"
-          style={{ ...styles.link, ...(location.pathname === "/hospital/ml-predict" ? styles.active : {}) }}
+          style={{ ...styles.link, ...(location.pathname.startsWith("/hospital/ml-predict") ? styles.active : {}) }}
         >
           ML Prediction
         </Link>
