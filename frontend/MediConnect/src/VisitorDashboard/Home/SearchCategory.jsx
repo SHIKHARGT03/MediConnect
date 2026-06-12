@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "react-bootstrap";
 import { FaHeartbeat, FaXRay, FaBone, FaBrain, FaLungs, FaStethoscope, FaUserNurse, FaMicroscope } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 const categories = [
   { icon: <FaHeartbeat size={30} />, title: "Cardiology", desc: "Heart-related treatment", bg: "#e3f2fd" },
@@ -9,13 +10,14 @@ const categories = [
   { icon: <FaBone size={30} />, title: "Orthopedics", desc: "Bones & Joints care", bg: "#e8f5e9" },
   { icon: <FaBrain size={30} />, title: "Neurology", desc: "Brain & Nervous system", bg: "#fff3e0" },
   { icon: <FaLungs size={30} />, title: "Pulmonology", desc: "Lungs & Breathing", bg: "#ede7f6" },
-  { icon: <FaStethoscope size={30} />, title: "General", desc: "Primary health checkups", bg: "#f3e5f5" },
+  { icon: <FaStethoscope size={30} />, title: "General OPD", desc: "Primary health checkups", bg: "#f3e5f5" },
   { icon: <FaUserNurse size={30} />, title: "Pediatrics", desc: "Child healthcare", bg: "#e1f5fe" },
-  { icon: <FaMicroscope size={30} />, title: "Pathology", desc: "Lab diagnosis", bg: "#f9fbe7" },
+  { icon: <FaMicroscope size={30} />, title: "ENT", desc: "Ear, Nose & Throat", bg: "#f9fbe7" },
 ];
 
 const SearchCategory = () => {
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const navigate = useNavigate();
 
   return (
     <div style={{ background: "#f9f9ff", padding: "60px 20px" }}>
@@ -55,6 +57,13 @@ const SearchCategory = () => {
                         backgroundColor: "#6f42c1", // purple
                         borderColor: "#6f42c1",
                       }}
+                      onClick={() =>
+                        navigate(`/visitor/category/${encodeURIComponent(cat.title)}`, {
+                          state: {
+                            department: cat.title,
+                          },
+                        })
+                      }
                     >
                       Book Appointment
                     </Button>

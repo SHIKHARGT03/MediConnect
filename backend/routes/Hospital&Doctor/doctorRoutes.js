@@ -4,7 +4,8 @@ import {
   getDoctorById,
   getDoctorsByDepartment,
   getDoctorsFiltered,
-  getTopDoctorsBySymptom // ✅ import new controller
+  getTopDoctorsBySymptom, // ✅ import new controller
+  getTopDoctorsByDepartment // ✅ import new controller
 } from '../../controllers/Hospital&Doctor/doctorController.js';
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.get('/', getDoctorsFiltered); // handles query params
 router.get('/:id', getDoctorById);
 router.get('/by-department/:dept', getDoctorsByDepartment);
 router.get('/top-doctors/:symptom', getTopDoctorsBySymptom); // ✅ new route
+router.get('/top-doctors-by-category/:department', getTopDoctorsByDepartment); // ✅ new route
 
 export default router;

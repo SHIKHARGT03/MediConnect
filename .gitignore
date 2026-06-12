@@ -1,0 +1,53 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Environment variables
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Build output
+dist/
+build/
+frontend/MediConnect/dist/
+frontend/MediConnect/build/
+/.cache/
+.vite/
+
+# Test coverage
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Certificates and keys
+*.pem
+*.key
+*.p12
+
+# Misc
+*.log

@@ -90,3 +90,31 @@ export const getTopDoctorsBySymptom = async (req, res) => {
     res.status(500).json({ error: "Error fetching top doctors by symptom" });
   }
 };
+
+// Get top doctors by department/category (experience > 5, one per hospital)
+export const getTopDoctorsByDepartment = async (req, res) => {
+  const { department } = req.params;
+
+  try {
+    const doctors = await Doctor.find({
+      department,
+      experience: { $gte: 5 }
+    }).populate('hospitalId', 'name location');
+
+    // Pick one top doctor per hospital
+    const topDoctors = [];
+    const seenHospitals = new Set();
+
+    for (const doc of doctors) {
+      const hospitalId = doc.hospitalId?._id?.toString();
+      if (hospitalId && !seenHospitals.has(hospitalId)) {
+        seenHospitals.add(hospitalId);
+        topDoctors.push(doc);
+      }
+    }
+
+    res.json(topDoctors);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching top doctors by department' });
+  }
+};
