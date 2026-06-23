@@ -32,8 +32,9 @@ const TopDoctorsBySymptom = () => {
     return 500;
   };
 
-  const handleBook = (hospitalId, doctorId) => {
-    navigate(`/appointment/hospital/${hospitalId}/doctor/${doctorId}`);
+  const handleBook = (hospitalId, doctor) => {
+    const department = encodeURIComponent(doctor?.department || "");
+    navigate(`/visitor/book-appointment/hospital/${hospitalId}${department ? `?department=${department}` : ""}`);
   };
 
   // Map doctor index to image file
@@ -46,10 +47,9 @@ const TopDoctorsBySymptom = () => {
     <div style={{ 
       padding: 0, 
       margin: 0, 
-      width: "100vw", 
+      width: "100%", 
       minHeight: "100vh",
       backgroundColor: "#f8f9fa",
-      maxWidth: "100%",
       overflowX: "hidden",
       position: "relative",
       left: 0,
@@ -75,7 +75,7 @@ const TopDoctorsBySymptom = () => {
       </div>
 
       {/* Content Container */}
-      <div style={{ width: "100%", padding: "0 20px" }}>
+      <div style={{ width: "100%", padding: "0 20px", boxSizing: "border-box" }}>
         {/* Doctors Grid or Empty State */}
         {loading ? (
           <div className="text-center py-5">
@@ -93,7 +93,9 @@ const TopDoctorsBySymptom = () => {
           </div>
         ) : (
           <div className="row g-4 justify-content-center" style={{ margin: 0, width: "100%" }}>
-            {doctors.map((doc, index) => (
+            {[...doctors]
+              .sort((a, b) => (b.experience || 0) - (a.experience || 0))
+              .map((doc, index) => (
               <div className="col-md-6 col-lg-4" key={doc._id} style={{ paddingBottom: "20px" }}>
                 <div
                   className="card shadow h-100"
@@ -165,7 +167,7 @@ const TopDoctorsBySymptom = () => {
                         boxShadow: "0 4px 8px rgba(0, 123, 255, 0.2)"
                       }}
                       onClick={() =>
-                        handleBook(doc.hospitalId._id, doc._id)
+                        handleBook(doc.hospitalId._id, doc)
                       }
                     >
                       Book Appointment

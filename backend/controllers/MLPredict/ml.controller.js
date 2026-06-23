@@ -44,6 +44,13 @@ export const runMLPrediction = async (req, res) => {
       try {
         // Call ML service with image URL
         const mlResult = await predictDisease(disease, { imageUrl: uploadResult.secure_url });
+        console.log("Brain stroke ML result:", {
+          prediction: mlResult.prediction,
+          confidence: mlResult.confidence,
+          argmaxClass: mlResult.argmaxClass,
+          rawOutputs: mlResult.rawOutputs,
+          classMapping: mlResult.classMapping,
+        });
         prediction.result = mlResult.prediction;
         // Convert confidence from percent (0-100) to float (0-1)
         prediction.confidence = mlResult.confidence > 1 ? mlResult.confidence / 100 : mlResult.confidence;
@@ -58,6 +65,9 @@ export const runMLPrediction = async (req, res) => {
           confidence: prediction.confidence,
           modelUsed: prediction.modelUsed,
           imageUrl: prediction.imageUrl,
+          rawOutputs: mlResult.rawOutputs,
+          argmaxClass: mlResult.argmaxClass,
+          classMapping: mlResult.classMapping,
         });
       } catch (mlError) {
         prediction.status = "failed";

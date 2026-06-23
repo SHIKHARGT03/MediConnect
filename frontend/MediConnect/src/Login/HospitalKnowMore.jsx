@@ -140,8 +140,8 @@ const HospitalKnowMore = () => {
 
 const styles = {
   heroContainer: {
-    width: "100vw",
-    height: "100vh",
+    width: "100%",
+    minHeight: "100vh",
     backgroundImage: `url("/Know/bg1.jpg")`,
     backgroundSize: "cover",
     backgroundPosition: "top",

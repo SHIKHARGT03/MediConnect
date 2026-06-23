@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./App.css";
 
 // Auth & Info Pages
 import LandingPage from "./Login/LandingPage";

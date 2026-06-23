@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import axios from "axios";
 import {
   FaCalendarAlt,
   FaVial,
@@ -14,6 +15,7 @@ import {
   FaAward,
 } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
+import SuccessNotice from "../../components/SuccessNotice";
 
 const departmentTests = {
   Pathology: ["Blood Test", "Urine Test"],
@@ -84,6 +86,9 @@ const LabTestDetail = () => {
   const [selectedPackageIndex, setSelectedPackageIndex] = useState(null); // for package card
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
 
   // ISO date min (YYYY-MM-DD)
   const today = new Date().toISOString().split("T")[0];
@@ -96,12 +101,19 @@ const LabTestDetail = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Mock hospital (as in your file)
   useEffect(() => {
-    setHospital({
-      name: "Generic Hospital Name",
-      departments: Object.keys(departmentTests),
-    });
+    const fetchHospital = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/hospitals/${hospitalId}`);
+        setHospital(res.data);
+      } catch (err) {
+        console.error("Error fetching hospital for lab tests:", err);
+      }
+    };
+
+    if (hospitalId) {
+      fetchHospital();
+    }
   }, [hospitalId]);
 
   const testData = Object.entries(departmentTests).flatMap(([dept, tests]) =>
@@ -144,13 +156,17 @@ const LabTestDetail = () => {
       .map(([key]) => key);
 
     if (missingFields.length > 0) {
-      alert(`Missing fields: ${missingFields.join(", ")}`);
+      setNoticeTitle("Booking incomplete");
+      setNoticeMessage(`Please choose: ${missingFields.join(", ")}`);
+      setNoticeOpen(true);
       return;
     }
 
     createBookingRequest(bookingData)
-      .then(() => {
-        alert("Booking request sent!");
+      .then((res) => {
+        setNoticeTitle("Booking request sent successfully");
+        setNoticeMessage(`Booking ID: ${res.booking.bookingId}`);
+        setNoticeOpen(true);
         setSelectedSlotIndex(null);
         setSelectedPackageIndex(null);
         setSelectedDate("");
@@ -161,7 +177,9 @@ const LabTestDetail = () => {
           "❌ Booking error:",
           err?.response?.data || err.message || err
         );
-        alert("Failed to book lab test.");
+        setNoticeTitle("Booking failed");
+        setNoticeMessage("We could not complete your lab test booking. Please try again.");
+        setNoticeOpen(true);
       });
   };
 
@@ -206,7 +224,7 @@ const LabTestDetail = () => {
   };
 
   return (
-    <div style={{ width: "100vw", maxWidth: "100%", overflowX: "hidden" }}>
+    <div style={{ width: "100%", overflowX: "hidden" }}>
       {/* Hero Section */}
       <div style={{ position: "relative", height: "80vh", width: "100%" }}>
         <img
@@ -231,7 +249,7 @@ const LabTestDetail = () => {
           }}
         >
           <h2 style={{ fontSize: "2.5rem" }}>Get your all test at</h2>
-          <h1 style={{ fontSize: "3.5rem", fontWeight: "bold" }}>
+          <h1 style={{ fontSize: "clamp(2.2rem, 6vw, 3.5rem)", fontWeight: "bold" }}>
             {hospital?.name}
           </h1>
         </div>
@@ -468,6 +486,13 @@ const LabTestDetail = () => {
           </div>
         </div>
       </div>
+
+      <SuccessNotice
+        open={noticeOpen}
+        title={noticeTitle}
+        message={noticeMessage}
+        onClose={() => setNoticeOpen(false)}
+      />
     </div>
   );
 };

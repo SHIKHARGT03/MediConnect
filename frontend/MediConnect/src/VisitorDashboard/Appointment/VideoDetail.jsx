@@ -4,6 +4,7 @@ import axios from "axios";
 import { FaCalendarAlt } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
 import { getDoctorsByDepartment } from "../../api/doctor";
+import SuccessNotice from "../../components/SuccessNotice";
 
 const VideoDetail = () => {
   const { hospitalId } = useParams();
@@ -16,6 +17,9 @@ const VideoDetail = () => {
   const [availabilityShown, setAvailabilityShown] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
 
   const storedUser = JSON.parse(
     localStorage.getItem("userInfo") || localStorage.getItem("user")
@@ -102,19 +106,22 @@ const VideoDetail = () => {
       .map(([key]) => key);
 
     if (missingFields.length > 0) {
-      alert(`Missing fields: ${missingFields.join(", ")}`);
+      setNoticeTitle("Booking incomplete");
+      setNoticeMessage(`Please choose: ${missingFields.join(", ")}`);
+      setNoticeOpen(true);
       return;
     }
 
     createBookingRequest(bookingData)
       .then((res) => {
-        alert(
-          "Video consultation request sent!\nBooking ID: " +
-            res.booking.bookingId
-        );
+        setNoticeTitle("Video consultation request sent successfully");
+        setNoticeMessage(`Booking ID: ${res.booking.bookingId}`);
+        setNoticeOpen(true);
       })
       .catch(() => {
-        alert("Failed to book video consultation.");
+        setNoticeTitle("Booking failed");
+        setNoticeMessage("We could not complete your video consultation booking. Please try again.");
+        setNoticeOpen(true);
       });
   };
 
@@ -257,6 +264,13 @@ const VideoDetail = () => {
           </div>
         )}
       </div>
+
+      <SuccessNotice
+        open={noticeOpen}
+        title={noticeTitle}
+        message={noticeMessage}
+        onClose={() => setNoticeOpen(false)}
+      />
     </div>
   );
 };

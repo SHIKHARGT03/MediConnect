@@ -66,12 +66,13 @@ const styles = {
   heroWrapper: {
     position: "relative",
     height: "70vh",
-    width: "100vw",
+    width: "100%",
     overflow: "hidden",
     display: "flex",
     flexDirection: "column",
     justifyContent: "flex-end",
     alignItems: "center",
+    boxSizing: "border-box",
   },
 
   heroImage: {

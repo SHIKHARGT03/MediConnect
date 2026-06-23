@@ -10,6 +10,15 @@ const BrainStroke = () => {
   const [confidence, setConfidence] = useState(null);
   const [canSave, setCanSave] = useState(false);
 
+  const isStrokeResult =
+    result === "Bleeding" || result === "Ischemia" || result === "Stroke";
+  const confidencePercent =
+    typeof confidence === "number"
+      ? confidence <= 1
+        ? confidence * 100
+        : confidence
+      : null;
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -41,7 +50,7 @@ const BrainStroke = () => {
         setCanSave(true);
         setLoading(false);
       }, 3000); // intentional AI delay
-    } catch (err) {
+    } catch {
       setLoading(false);
       alert("Prediction failed");
     }
@@ -51,12 +60,13 @@ const BrainStroke = () => {
     <div
       style={{
         width: "100%",
-        height: "100%",
+        minHeight: "100%",
         background: "#ffffff",
-        padding: "32px 48px",
+        padding: "clamp(24px, 4vw, 32px) clamp(20px, 5vw, 48px)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        boxSizing: "border-box",
       }}
     >
       <div>
@@ -66,6 +76,8 @@ const BrainStroke = () => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
+            gap: "16px",
+            flexWrap: "wrap",
             marginBottom: "24px",
           }}
         >
@@ -83,6 +95,7 @@ const BrainStroke = () => {
             onChange={(e) => setBookingId(e.target.value)}
             style={{
               width: "180px",
+              maxWidth: "100%",
               padding: "8px",
               borderRadius: "6px",
               border: "1px solid #ccc",
@@ -162,19 +175,22 @@ const BrainStroke = () => {
           {result && (
             <>
               <h5>
-                {result === "Stroke"
+                {isStrokeResult
                   ? "Stroke Detected"
                   : "No Stroke Detected"}
               </h5>
               <p style={{ marginBottom: 4 }}>
+                Model class: <strong>{result}</strong>
+              </p>
+              <p style={{ marginBottom: 4 }}>
                 Based on analysis of the uploaded brain scan.
               </p>
               <small>
-                Confidence: {(confidence * 100).toFixed(1)}%
+                Confidence: {confidencePercent?.toFixed(1)}%
               </small>
 
               {/* LOW CONFIDENCE WARNING */}
-              {confidence < 0.5 && (
+              {confidencePercent !== null && confidencePercent < 50 && (
                 <div
                   style={{
                     marginTop: "10px",

@@ -1,6 +1,6 @@
 // src/VisitorDashboard/Appointment/Appointment.jsx
-import React, { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 import HeroSection from "./HeroSection";
 import HospitalSection from "./HospitalSection";
@@ -26,7 +26,17 @@ const AppointmentHome = ({ selectedToggle, setSelectedToggle }) => (
 );
 
 const Appointment = () => {
+  const location = useLocation();
   const [selectedToggle, setSelectedToggle] = useState("hospital");
+
+  useEffect(() => {
+    const typeFromUrl = new URLSearchParams(location.search).get("type");
+    if (typeFromUrl && ["hospital", "lab", "video"].includes(typeFromUrl)) {
+      setSelectedToggle(typeFromUrl);
+    } else if (!typeFromUrl) {
+      setSelectedToggle("hospital");
+    }
+  }, [location.search]);
 
   return (
     <Routes>

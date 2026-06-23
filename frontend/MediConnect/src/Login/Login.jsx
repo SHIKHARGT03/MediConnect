@@ -60,7 +60,7 @@ const Login = () => {
 
 const styles = {
   container: {
-    width: "100vw", height: "100vh", backgroundColor: "#f5f5f7",
+    width: "100%", minHeight: "100vh", backgroundColor: "#f5f5f7",
     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
   },
   heading: {

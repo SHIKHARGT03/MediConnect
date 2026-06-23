@@ -3,6 +3,10 @@ import User from "../../models/auth/userModel.js";
 import moment from "moment";
 import { getIO } from "../../socket/index.js";
 
+const SCHEDULE_BOOKING_TYPES = ["appointment", "labTest"];
+
+const escapeRegExp = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
  * @desc    Create a new booking request
@@ -243,13 +247,21 @@ export const createFollowUpBooking = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    // ✅ Calculate next week's date safely
-    const currentDate = moment(booking.date, "YYYY-MM-DD");
-    if (!currentDate.isValid()) {
+    const originalDate = moment(booking.date, "YYYY-MM-DD");
+    if (!originalDate.isValid()) {
       return res.status(400).json({ message: "Invalid original booking date" });
     }
 
-    const newDate = currentDate.add(7, "days").format("YYYY-MM-DD");
+    const startOfToday = moment().startOf("day");
+    const sevenDaysAgo = moment().subtract(7, "days").startOf("day");
+
+    if (originalDate.isBefore(sevenDaysAgo) || originalDate.isAfter(startOfToday)) {
+      return res.status(400).json({
+        message: "Follow-up is available only for bookings from the last 7 days.",
+      });
+    }
+
+    const newDate = originalDate.clone().add(7, "days").format("YYYY-MM-DD");
 
     const followUpBooking = new BookingRequest({
       patientId: booking.patientId,
@@ -287,6 +299,7 @@ export const getHospitalScheduleOverview = async (req, res) => {
     const todayCount = await BookingRequest.countDocuments({
       hospitalId,
       status: "accepted",
+      type: { $in: SCHEDULE_BOOKING_TYPES },
       date: today,
     });
 
@@ -294,6 +307,7 @@ export const getHospitalScheduleOverview = async (req, res) => {
     const pastWeekCount = await BookingRequest.countDocuments({
       hospitalId,
       status: "accepted",
+      type: { $in: SCHEDULE_BOOKING_TYPES },
       date: { $gte: oneWeekAgo, $lt: today },
     });
 
@@ -301,6 +315,7 @@ export const getHospitalScheduleOverview = async (req, res) => {
     const totalAccepted = await BookingRequest.countDocuments({
       hospitalId,
       status: "accepted",
+      type: { $in: SCHEDULE_BOOKING_TYPES },
     });
 
     res.status(200).json({
@@ -322,23 +337,31 @@ export const getHospitalScheduleBookings = async (req, res) => {
     let filter = {
       hospitalId,
       status: "accepted",
+      type: { $in: SCHEDULE_BOOKING_TYPES },
     };
 
     // Optional filters
-    if (type && type !== "All") filter.type = type;
+    if (type && type !== "All" && SCHEDULE_BOOKING_TYPES.includes(type)) {
+      filter.type = type;
+    }
     if (department && department !== "All") filter.department = department;
-    if (patientId) filter.patientId = patientId;
+    if (patientId?.trim()) {
+      filter.patientId = {
+        $regex: escapeRegExp(patientId.trim()),
+        $options: "i",
+      };
+    }
 
     // Date filters (use string comparison)
     const todayStr = moment().format("YYYY-MM-DD");
     if (dateRange === "Today" || !dateRange) {
-      filter.date = { $gte: todayStr };
+      filter.date = todayStr;
     } else if (dateRange === "Last7Days") {
       filter.date = { $gte: moment().subtract(7, "days").format("YYYY-MM-DD") };
-    } else if (dateRange === "Last30Days") {
-      filter.date = { $gte: moment().subtract(30, "days").format("YYYY-MM-DD") };
+    } else if (dateRange === "LastMonth" || dateRange === "Last30Days") {
+      filter.date = { $gte: moment().subtract(1, "month").format("YYYY-MM-DD") };
     } else if (dateRange === "Last3Months") {
-      filter.date = { $gte: moment().subtract(90, "days").format("YYYY-MM-DD") };
+      filter.date = { $gte: moment().subtract(3, "months").format("YYYY-MM-DD") };
     }
 
     const bookings = await BookingRequest.find(filter).sort({
@@ -378,7 +401,8 @@ export const startVideoConsultation = async (req, res) => {
 
   // 🔔 SOCKET EVENT
   const io = getIO();
-  io.to(booking.bookingId).emit("call-started", {
+  io.emit("call-started", {
+    roomId: booking.bookingId,
     bookingId: booking.bookingId,
   });
 
@@ -408,6 +432,7 @@ export const endVideoConsultation = async (req, res) => {
   // 🔔 SOCKET EVENT
   const io = getIO();
   io.to(booking.bookingId).emit("call-ended", {
+    roomId: booking.bookingId,
     bookingId: booking.bookingId,
   });
 

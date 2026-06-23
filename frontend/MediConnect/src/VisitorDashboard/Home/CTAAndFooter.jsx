@@ -23,7 +23,7 @@ const CTAAndFooter = () => {
             <Col md="auto" className="text-md-end text-center">
               <Button
                 as={Link}
-                to="/visitor/book"
+                to="/visitor/book-appointment"
                 className="px-4 py-2"
                 style={{
                   backgroundColor: "#6a1b9a",
@@ -60,13 +60,13 @@ const CTAAndFooter = () => {
               md="auto"
               className="text-md-end text-center d-flex flex-wrap justify-content-md-end justify-content-center gap-3"
             >
-              <Link
-                to="/visitor/know"
+              <a
+                href="http://localhost:5173/know-more/visitor"
                 className="text-white mx-3"
                 style={{ fontWeight: "600", textDecoration: "none" }}
               >
                 About Us
-              </Link>
+              </a>
               <Link
                 to="/visitor/dashboard"
                 className="text-white mx-2"
@@ -75,21 +75,21 @@ const CTAAndFooter = () => {
                 Home
               </Link>
               <Link
-                to="/visitor/book"
+                to="/visitor/book-appointment"
                 className="text-white mx-2"
                 style={{ fontWeight: "400", textDecoration: "none" }}
               >
                 Book Appointment
               </Link>
               <Link
-                to="/visitor/lab"
+                to="/visitor/book-appointment?type=lab"
                 className="text-white mx-2"
                 style={{ fontWeight: "400", textDecoration: "none" }}
               >
                 Book Lab Test
               </Link>
               <Link
-                to="/visitor/records"
+                to="/visitor/schedule"
                 className="text-white mx-2"
                 style={{ fontWeight: "400", textDecoration: "none" }}
               >

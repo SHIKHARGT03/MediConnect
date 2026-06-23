@@ -27,7 +27,7 @@ const Schedule = () => {
 
   return (
     <div style={{ background: "#f8f9fa", minHeight: "100vh" }}>
-      <HeroSection bookings={bookings} patientId={patientId} />
+      <HeroSection bookings={bookings} setBookings={setBookings} patientId={patientId} />
       <Timeline bookings={bookings} patientId={patientId} />
       <Past patientId={patientId} />
     </div>

@@ -5,12 +5,11 @@ const HomePage = () => {
     <div
       style={{
         width: "100%",
-        minHeight: "0",
-        height: "100%",
+        minHeight: "100%",
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         background: "#181824",
         padding: "0 0 0 0",
         overflow: "hidden",
@@ -18,14 +17,14 @@ const HomePage = () => {
       }}
     >
       {" "}
-      <div style={{ width: "100%", padding: "48px 56px 0 56px" }}>
+      <div style={{ width: "100%", padding: "clamp(28px, 5vw, 48px) clamp(24px, 5vw, 56px) 24px" }}>
         {" "}
         <h1
           style={{
             fontWeight: 800,
             marginBottom: "12px",
-            fontSize: "2.5rem",
-            letterSpacing: "-1px",
+            fontSize: "clamp(2rem, 4vw, 2.5rem)",
+            letterSpacing: 0,
             color: "#ffffff",
           }}
         >
@@ -52,6 +51,7 @@ const HomePage = () => {
         style={{
           width: "100%",
           flex: 1,
+          minHeight: "420px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -70,6 +70,7 @@ const HomePage = () => {
           style={{
             width: "100%",
             height: "100%",
+            minHeight: "420px",
             objectFit: "cover",
             borderRadius: 0,
             background: "#181824",

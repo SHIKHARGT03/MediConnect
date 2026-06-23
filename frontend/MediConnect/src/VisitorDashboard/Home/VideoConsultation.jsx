@@ -1,5 +1,6 @@
 import React from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 const VideoConsultation = () => {
   const sectionTitleStyle = {
@@ -21,15 +22,16 @@ const VideoConsultation = () => {
     color: "black",
     border: "2px solid #6a1b9a",
     padding: "12px 24px",
-    fontWeight: "bold",
+    fontWeight: "600",
     fontSize: "1rem",
-    transition: "0.3s",
+    transition: "all 0.2s ease",
   };
 
   const buttonHoverStyle = {
     backgroundColor: "#6a1b9a",
     color: "white",
     border: "2px solid #6a1b9a",
+    fontWeight: "700",
   };
 
   const benefitTitleStyle = {
@@ -51,6 +53,11 @@ const VideoConsultation = () => {
   };
 
   const [hover, setHover] = React.useState(false);
+  const navigate = useNavigate();
+
+  const handleVideoConsultation = () => {
+    navigate("/visitor/book-appointment?type=video");
+  };
 
   return (
     <div>
@@ -106,6 +113,7 @@ const VideoConsultation = () => {
                   style={hover ? buttonHoverStyle : buttonStyle}
                   onMouseEnter={() => setHover(true)}
                   onMouseLeave={() => setHover(false)}
+                  onClick={handleVideoConsultation}
                 >
                   Book Your Video Consultation
                 </Button>

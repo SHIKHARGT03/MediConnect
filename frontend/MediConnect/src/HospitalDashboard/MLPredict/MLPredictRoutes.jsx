@@ -10,11 +10,38 @@ import BrainStroke from "./BrainStroke";
 
 const MLPredict = () => {
   return (
-    <div style={{height: "100vh", display: "flex", minHeight: 0}}>
+    <div className="ml-predict-shell">
+      <style>{`
+        .ml-predict-shell {
+          min-height: calc(100vh - 70px);
+          display: flex;
+          background: #111118;
+        }
+
+        .ml-predict-content {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          background: #ffffff;
+        }
+
+        .ml-predict-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+        }
+
+        @media (max-width: 900px) {
+          .ml-predict-shell {
+            flex-direction: column;
+          }
+        }
+      `}</style>
       <Sidebar />
 
-      <div style={{width: "71%", display: "flex", flexDirection: "column", minHeight: 0}}>
-        <div style={{flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: "96px"}}>
+      <div className="ml-predict-content">
+        <div className="ml-predict-scroll">
           <Routes>
             <Route index element={<HomePage />} />
             <Route path="diabetes" element={<Diabetes />} />
@@ -24,7 +51,7 @@ const MLPredict = () => {
           </Routes>
         </div>
 
-        <div style={{flexShrink: 0}}>
+        <div style={{ flexShrink: 0 }}>
           <Disclaimer />
         </div>
       </div>

@@ -1,14 +1,31 @@
 // src/HospitalDashboard/Schedule/Filter.jsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getHospitalScheduleBookings } from "../../api/booking";
 import { getPrescriptionByBooking } from "../../api/prescription";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import axios from "axios";
 import SendPrescription from "./SendPrescription";
 
 const BRAND = "#6f42c1";
 const API_BASE =
   import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const DEPARTMENTS = [
+  "All",
+  "Cardiology",
+  "Orthopedics",
+  "General OPD",
+  "Pulmonology",
+  "Neurology",
+  "Pediatrics",
+  "ENT",
+  "Radiology",
+];
+
+const getBookingTypeLabel = (type) => {
+  if (type === "appointment") return "Doctor Appointment";
+  if (type === "labTest") return "Lab Test";
+  return "Unknown";
+};
 
 const Filter = ({ hospitalId, token }) => {
   const [filters, setFilters] = useState({
@@ -18,38 +35,37 @@ const Filter = ({ hospitalId, token }) => {
     patientId: "",
   });
 
-  const [departments, setDepartments] = useState(["All"]);
   const [bookings, setBookings] = useState([]);
   const [prescriptionMap, setPrescriptionMap] = useState({});
   const [loading, setLoading] = useState(false);
-
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [note, setNote] = useState("");
 
   const [sendModalBookingId, setSendModalBookingId] = useState(null);
   const [sendModalType, setSendModalType] = useState("appointment");
 
   // -------------------------
-  // Fetch hospital departments
+  // Fetch prescriptions per booking
   // -------------------------
-  useEffect(() => {
-    if (!hospitalId) return;
-    axios
-      .get(`/api/hospitals/${hospitalId}`)
-      .then((res) => {
-        if (Array.isArray(res.data?.departments)) {
-          const unique = [...new Set(res.data.departments)].sort();
-          setDepartments(["All", ...unique]);
+  const hydratePrescriptions = useCallback(async (bookingsList) => {
+    const map = {};
+
+    await Promise.all(
+      bookingsList.map(async (b) => {
+        try {
+          const pres = await getPrescriptionByBooking(b.bookingId);
+          map[b.bookingId] = pres;
+        } catch {
+          // 404 = no prescription → ignore
         }
       })
-      .catch(() => setDepartments(["All"]));
-  }, [hospitalId]);
+    );
+
+    setPrescriptionMap(map);
+  }, []);
 
   // -------------------------
   // Fetch bookings
   // -------------------------
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     if (!hospitalId) return;
     setLoading(true);
 
@@ -68,31 +84,11 @@ const Filter = ({ hospitalId, token }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // -------------------------
-  // Fetch prescriptions per booking
-  // -------------------------
-  const hydratePrescriptions = async (bookingsList) => {
-    const map = {};
-
-    await Promise.all(
-      bookingsList.map(async (b) => {
-        try {
-          const pres = await getPrescriptionByBooking(b.bookingId);
-          map[b.bookingId] = pres;
-        } catch {
-          // 404 = no prescription → ignore
-        }
-      })
-    );
-
-    setPrescriptionMap(map);
-  };
+  }, [filters, hospitalId, hydratePrescriptions, token]);
 
   useEffect(() => {
     fetchBookings();
-  }, [hospitalId, filters]);
+  }, [fetchBookings]);
 
   // -------------------------
   // Handlers
@@ -139,7 +135,7 @@ const Filter = ({ hospitalId, token }) => {
           </Form.Select>
 
           <Form.Select name="department" value={filters.department} onChange={handleFilterChange} style={{ width: 180 }}>
-            {departments.map((d) => (
+            {DEPARTMENTS.map((d) => (
               <option key={d} value={d}>{d === "All" ? "All Departments" : d}</option>
             ))}
           </Form.Select>
@@ -147,8 +143,9 @@ const Filter = ({ hospitalId, token }) => {
           <Form.Select name="dateRange" value={filters.dateRange} onChange={handleFilterChange} style={{ width: 180 }}>
             <option value="Today">Today</option>
             <option value="Last7Days">Last 7 Days</option>
-            <option value="Last30Days">Last 30 Days</option>
+            <option value="LastMonth">Last Month</option>
             <option value="Last3Months">Last 3 Months</option>
+            <option value="All">All</option>
           </Form.Select>
 
           <Form.Control
@@ -206,7 +203,7 @@ const Filter = ({ hospitalId, token }) => {
                 <div>
                   <span style={{ fontWeight: 700, color: "#222" }}>Type: </span>
                   <span style={{ color: "#222" }}>
-                    {booking.type === "appointment" ? "Doctor Appointment" : "Lab Test"}
+                    {getBookingTypeLabel(booking.type)}
                   </span>
                 </div>
                 <div>
@@ -239,7 +236,6 @@ const Filter = ({ hospitalId, token }) => {
                     onClick={async () => {
                       const pres = prescriptionMap[booking.bookingId];
                       const url = pres?.fileUrl || pres?.secure_url;
-                      const isLab = booking.type === "labTest";
                       if (pres?.fileType === "pdf") {
                         try {
                           const resp = await axios.get(
@@ -249,7 +245,7 @@ const Filter = ({ hospitalId, token }) => {
                           if (signed) window.open(signed, "_blank", "noopener,noreferrer");
                           else if (url) window.open(url, "_blank", "noopener,noreferrer");
                           else window.open(`${API_BASE}/api/prescription/file/${booking.bookingId}`, "_blank", "noopener,noreferrer");
-                        } catch (err) {
+                        } catch {
                           if (url) window.open(url, "_blank", "noopener,noreferrer");
                           else window.open(`${API_BASE}/api/prescription/file/${booking.bookingId}`, "_blank", "noopener,noreferrer");
                         }

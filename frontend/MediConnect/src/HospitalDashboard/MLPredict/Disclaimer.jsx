@@ -8,6 +8,7 @@ const Disclaimer = () => {
         padding: "12px 24px",
         fontSize: "0.9rem",
         color: "#b5b5d6",
+        boxSizing: "border-box",
       }}
     >
       ⚠️ <strong>Clinical Disclaimer:</strong> This AI screening tool is intended

@@ -4,6 +4,7 @@ import numpy as np
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.efficientnet import preprocess_input
 import os
+import h5py
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "brain_stroke_efficientnet.h5")
 CLASS_MAP_PATH = os.path.join(os.path.dirname(__file__), "class_mapping.json")
@@ -29,6 +30,86 @@ def build_manual_model(base_model_name="EfficientNetB0"):
     model = tf.keras.models.Model(inputs=base.input, outputs=predictions)
     return model
 
+
+def _find_dataset_by_weight_name(group, weight_name, expected_shape):
+    if weight_name in group and hasattr(group[weight_name], "shape"):
+        dataset = group[weight_name]
+        if tuple(dataset.shape) == tuple(expected_shape):
+            return dataset
+
+    found = None
+
+    def visitor(name, obj):
+        nonlocal found
+        if found is not None or not hasattr(obj, "shape"):
+            return
+        if name.split("/")[-1] == weight_name and tuple(obj.shape) == tuple(expected_shape):
+            found = obj
+
+    group.visititems(visitor)
+    return found
+
+
+def _find_saved_layer_group(saved_base_group, layer_name):
+    if layer_name in saved_base_group:
+        return saved_base_group[layer_name]
+
+    # Keras may assign normalization vs normalization_1 depending on what was
+    # constructed earlier in the process. There is only one normalization layer.
+    if layer_name.startswith("normalization"):
+        for saved_name in saved_base_group.keys():
+            if saved_name.startswith("normalization"):
+                return saved_base_group[saved_name]
+
+    return None
+
+
+def load_legacy_h5_weights_exact(model, model_path):
+    assigned = 0
+    skipped = []
+
+    with h5py.File(model_path, "r") as h5:
+        model_weights = h5["model_weights"]
+        saved_base_group = model_weights["efficientnetb0"]
+
+        for layer in model.layers:
+            if not layer.weights:
+                continue
+
+            if layer.name in ("dense_2", "dense_3"):
+                saved_group = model_weights.get(layer.name)
+            else:
+                saved_group = _find_saved_layer_group(saved_base_group, layer.name)
+
+            if saved_group is None:
+                skipped.append(f"{layer.name}: no saved group")
+                continue
+
+            for weight in layer.weights:
+                weight_name = weight.name.split("/")[-1].split(":")[0]
+                dataset = _find_dataset_by_weight_name(
+                    saved_group,
+                    weight_name,
+                    tuple(weight.shape),
+                )
+
+                if dataset is None:
+                    skipped.append(f"{layer.name}/{weight_name}: no matching dataset")
+                    continue
+
+                weight.assign(np.array(dataset))
+                assigned += 1
+
+    print(f"Loaded {assigned} exact weight tensors from legacy H5.")
+    if skipped:
+        print(f"Skipped {len(skipped)} weight tensors while loading legacy H5.")
+        for item in skipped[:10]:
+            print(f"  - {item}")
+    if assigned < 300:
+        raise RuntimeError(
+            f"Only loaded {assigned} tensors from {model_path}; expected EfficientNetB0 backbone plus dense head."
+        )
+
 try:
     print(f"Loading model from {MODEL_PATH}...")
     # Try standard load first, but it is known to fail with this H5
@@ -39,9 +120,8 @@ except Exception as e:
     try:
         # Manual reconstruction (EfficientNetB0 + Custom Head)
         model = build_manual_model("EfficientNetB0")
-        # Load weights by name to bypass topological errors
-        model.load_weights(MODEL_PATH, by_name=True, skip_mismatch=True)
-        print("Model weights loaded successfully into EfficientNetB0.")
+        load_legacy_h5_weights_exact(model, MODEL_PATH)
+        print("Model weights loaded successfully into manually reconstructed EfficientNetB0.")
     except Exception as e_manual:
         print(f"Critical Error: Could not load model even with manual reconstruction. {e_manual}")
         raise e_manual
@@ -51,6 +131,7 @@ try:
     with open(CLASS_MAP_PATH) as f:
         class_map = json.load(f)
     index_to_class = {v: k for k, v in class_map.items()}
+    print(f"Brain stroke class mapping: {index_to_class}")
 except Exception as e:
     print(f"Error loading class map: {e}")
     index_to_class = {0: "Normal", 1: "Ischemia", 2: "Bleeding"} # Fallback
@@ -69,12 +150,20 @@ def predict_brain_stroke(img):
     img = np.expand_dims(img, axis=0)
     img = preprocess_input(img) # EfficientNet specific preprocessing
 
-    preds = model.predict(img)
+    preds = model.predict(img, verbose=0)
 
     idx = int(np.argmax(preds))
     confidence = float(np.max(preds))
+    raw_outputs = preds[0].astype(float).tolist()
+
+    print(f"Brain stroke raw outputs: {raw_outputs}")
+    print(f"Brain stroke argmax class: {idx} ({index_to_class.get(idx, 'Unknown')})")
+    print(f"Brain stroke confidence: {confidence * 100:.4f}%")
 
     return {
         "prediction": index_to_class.get(idx, "Unknown"),
-        "confidence": round(confidence * 100, 2)
+        "confidence": round(confidence * 100, 2),
+        "rawOutputs": raw_outputs,
+        "argmaxClass": idx,
+        "classMapping": index_to_class,
     }

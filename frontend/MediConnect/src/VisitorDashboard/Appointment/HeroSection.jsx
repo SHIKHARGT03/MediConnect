@@ -46,26 +46,28 @@ const HeroSection = ({ selectedToggle, setSelectedToggle }) => {
 
 const styles = {
   heroWrapper: {
-    width: "100vw",
-    height: "75vh",
+    width: "100%",
+    minHeight: "560px",
     background: "linear-gradient(to right, #eef5ff, #f4ecfc)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "flex-start",
-    paddingTop: "40px",
+    padding: "40px 20px",
+    boxSizing: "border-box",
   },
   heading: {
-    fontSize: "3rem",
+    fontSize: "clamp(2.1rem, 5vw, 3rem)",
     fontWeight: "bold",
     color: "#000",
-    margin: "180px 0 40px 0",
+    margin: "clamp(96px, 18vh, 160px) 0 40px 0",
     textAlign: "center",
   },
   buttonGroup: {
     display: "flex",
     gap: "20px",
     justifyContent: "center",
+    flexWrap: "wrap",
   },
   button: {
     border: "2px solid black",

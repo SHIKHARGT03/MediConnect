@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
   const linkStyle = (isActive) => ({
-    width: "80%",
+    width: "100%",
     backgroundColor: isActive ? "#7C3AED" : "#fff",
     color: isActive ? "#fff" : "#222",
     fontWeight: 600,
@@ -17,24 +17,49 @@ const Sidebar = () => {
     cursor: "pointer",
     textAlign: "center",
     textDecoration: "none",
-    display: "inline-block",
+    display: "block",
   });
 
   return (
     <div
+      className="ml-sidebar"
       style={{
-        width: "29%",
-        minWidth: 0,
+        width: "280px",
+        flexShrink: 0,
         background: "#111118",
-        padding: "36px 18px 36px 28px",
+        padding: "36px 28px",
         borderRight: "1px solid #1f1f2e",
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "flex-start",
-        height: "100%",
       }}
     >
+      <style>{`
+        @media (max-width: 900px) {
+          .ml-sidebar {
+            width: 100% !important;
+            flex-direction: row !important;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 20px !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid #1f1f2e;
+          }
+
+          .ml-sidebar h2 {
+            width: 100%;
+            margin-bottom: 6px !important;
+            font-size: 1.4rem !important;
+          }
+
+          .ml-sidebar a {
+            width: auto !important;
+            min-width: 150px;
+            padding: 10px 16px !important;
+          }
+        }
+      `}</style>
       <h2
         style={{
           fontWeight: 700,

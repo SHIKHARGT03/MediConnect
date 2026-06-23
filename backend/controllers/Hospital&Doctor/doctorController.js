@@ -54,6 +54,7 @@ export const getTopDoctorsBySymptom = async (req, res) => {
     "Chest Pain": "Cardiology",
     "Joint Pain": "Orthopedics",
     "Headache": "Neurology",
+    "Sore Throat": "ENT",
     "Cough": "Pulmonology",
     "Anxiety": "Psychiatry"
   };
@@ -66,16 +67,18 @@ export const getTopDoctorsBySymptom = async (req, res) => {
   try {
     const doctors = await Doctor.find({
       department,
-      experience: { $gte: 5 } // 🔧 Lower threshold to match more
+      experience: { $gte: 5 }
     }).populate('hospitalId', 'name location');
 
     console.log("Doctors fetched:", doctors.length);
+
+    const sortedDoctors = [...doctors].sort((a, b) => (b.experience || 0) - (a.experience || 0));
 
     // Pick one top doctor per hospital
     const topDoctors = [];
     const seenHospitals = new Set();
 
-    for (const doc of doctors) {
+    for (const doc of sortedDoctors) {
       const hospitalId = doc.hospitalId?._id?.toString();
       if (hospitalId && !seenHospitals.has(hospitalId)) {
         seenHospitals.add(hospitalId);

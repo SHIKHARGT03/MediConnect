@@ -122,8 +122,8 @@ const Register = () => {
 const styles = {
   container: {
     backgroundColor: "#f5f5f7",
-    width: "100vw",
-    height: "100vh",
+    width: "100%",
+    minHeight: "100vh",
     padding: "40px 20px",
     boxSizing: "border-box",
   },

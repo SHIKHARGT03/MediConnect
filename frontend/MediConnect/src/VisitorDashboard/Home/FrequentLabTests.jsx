@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaTint, FaVial, FaMicroscope, FaHeartbeat } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaTint, FaHeartbeat, FaVial, FaXRay } from 'react-icons/fa';
 
 const labTests = [
   {
@@ -8,23 +9,29 @@ const labTests = [
     icon: <FaTint size={28} color="#6f42c1" />,
   },
   {
-    name: 'Thyroid Profile',
-    subtext: 'Hormonal balance check',
-    icon: <FaMicroscope size={28} color="#6f42c1" />,
+    name: 'ECG',
+    subtext: 'Heart rhythm check',
+    icon: <FaHeartbeat size={28} color="#6f42c1" />,
   },
   {
-    name: 'Diabetes Check',
-    subtext: 'Blood sugar test',
+    name: 'Urine Test',
+    subtext: 'Quick urine analysis',
     icon: <FaVial size={28} color="#6f42c1" />,
   },
   {
-    name: 'Liver Function',
-    subtext: 'Organ performance test',
-    icon: <FaHeartbeat size={28} color="#6f42c1" />,
+    name: 'MRI Scan',
+    subtext: 'Detailed imaging scan',
+    icon: <FaXRay size={28} color="#6f42c1" />,
   },
 ];
 
 const FrequentLabTests = () => {
+  const navigate = useNavigate();
+
+  const handleBookSlot = () => {
+    navigate('/visitor/book-appointment?type=lab');
+  };
+
   return (
     <section style={{ background: '#f9f9ff', padding: '60px 0' }}>
       <div className="container text-center">
@@ -61,6 +68,7 @@ const FrequentLabTests = () => {
                 <div className="d-flex justify-content-center mt-auto w-100">
                   <button
                     className="btn"
+                    onClick={handleBookSlot}
                     style={{
                       backgroundColor: '#6f42c1',
                       color: '#ffffff',

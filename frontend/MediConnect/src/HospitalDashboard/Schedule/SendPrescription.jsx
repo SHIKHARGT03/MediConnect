@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { uploadPrescriptionForBooking } from "../../api/prescription";
+import SuccessNotice from "../../components/SuccessNotice";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
 const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg"];
@@ -19,6 +20,9 @@ export default function SendPrescription({
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
 
   useEffect(() => {
     if (!open) {
@@ -67,13 +71,12 @@ export default function SendPrescription({
     }
     setSending(true);
     try {
-      // uploadPrescriptionForBooking(bookingId, file, note[, token])
       const res = await uploadPrescriptionForBooking(bookingId, file, note, token);
-      // expected res: { message, prescription }
       setSending(false);
       if (onSuccess) onSuccess(res.prescription);
-      // Minimal UI feedback (replace with toast if you have one)
-      window.alert(res.message || "Sent successfully.");
+      setNoticeTitle("Prescription sent successfully");
+      setNoticeMessage(res.message || "Your prescription has been sent.");
+      setNoticeOpen(true);
       onClose();
     } catch (err) {
       console.error("Upload error:", err);
@@ -166,6 +169,13 @@ export default function SendPrescription({
       </div>
 
       {/* Embedded styles - keep all CSS in this component file */}
+      <SuccessNotice
+        open={noticeOpen}
+        title={noticeTitle}
+        message={noticeMessage}
+        onClose={() => setNoticeOpen(false)}
+      />
+
       <style>{`
         /* overlay */
         .sp-overlay {

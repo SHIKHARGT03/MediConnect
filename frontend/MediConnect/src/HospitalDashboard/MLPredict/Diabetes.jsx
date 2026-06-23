@@ -72,17 +72,18 @@ const Diabetes = () => {
     <div
       style={{
         width: "100%",
-        height: "100%",
+        minHeight: "100%",
         background: "#ffffff",
-        padding: "32px 48px",
+        padding: "clamp(24px, 4vw, 32px) clamp(20px, 5vw, 48px)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        boxSizing: "border-box",
       }}
     >
       <style>
         {`
-          .mlp-input::placeholder { color: #ffffff; opacity: 1; }
+          .mlp-input::placeholder { color: #777777; opacity: 1; }
         `}
       </style>
       <div>
@@ -91,6 +92,8 @@ const Diabetes = () => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
+            gap: "16px",
+            flexWrap: "wrap",
             marginBottom: "24px",
           }}
         >
@@ -108,6 +111,7 @@ const Diabetes = () => {
             onChange={(e) => setBookingId(e.target.value)}
             style={{
               width: "180px",
+              maxWidth: "100%",
               padding: "8px",
               borderRadius: "6px",
               border: "1px solid #ccc",

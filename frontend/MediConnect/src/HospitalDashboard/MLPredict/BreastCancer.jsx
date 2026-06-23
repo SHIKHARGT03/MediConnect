@@ -39,12 +39,13 @@ const avgMap = {
 
 const containerStyle = {
   width: "100%",
-  height: "100%",
+  minHeight: "100%",
   background: "#ffffff",
-  padding: "32px 48px",
+  padding: "clamp(24px, 4vw, 32px) clamp(20px, 5vw, 48px)",
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
+  boxSizing: "border-box",
 };
 
 const BreastCancer = () => {
@@ -107,6 +108,8 @@ const BreastCancer = () => {
           style={{
             display: "flex",
             justifyContent: "space-between",
+            gap: "16px",
+            flexWrap: "wrap",
             marginBottom: "24px",
           }}
         >
@@ -124,6 +127,7 @@ const BreastCancer = () => {
             onChange={(e) => setBookingId(e.target.value)}
             style={{
               width: "180px",
+              maxWidth: "100%",
               padding: "8px",
               borderRadius: "6px",
               border: "1px solid #ccc",
@@ -205,7 +209,7 @@ const BreastCancer = () => {
         </div>
 
         {error && (
-          <div style={{ marginTop: 12, color: "#ffb4b4" }}>
+          <div style={{ marginTop: 12, color: "#b42318" }}>
             {error}
           </div>
         )}

@@ -6,9 +6,8 @@ const symptoms = [
   { name: "Fever", description: "Persistent high temperature", icon: "🌡️", dept: "General OPD" },
   { name: "Chest Pain", description: "Discomfort or pain in chest area", icon: "❤️", dept: "Cardiology" },
   { name: "Joint Pain", description: "Pain in knees, elbows or joints", icon: "🦴", dept: "Orthopedics" },
-  { name: "Skin Rash", description: "Itchy, red or bumpy skin", icon: "🧴", dept: "Dermatology" },
-  { name: "Toothache", description: "Pain in teeth or gums", icon: "🦷", dept: "Dentistry" },
   { name: "Headache", description: "Sharp or dull pain in head", icon: "🧠", dept: "Neurology" },
+  { name: "Sore Throat", description: "Pain or irritation in the throat", icon: "🗣️", dept: "ENT" },
 ];
 
 const SymptomSection = () => {

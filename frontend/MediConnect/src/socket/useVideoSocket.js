@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { socket } from "../socket";
 import { SOCKET_EVENTS } from "../socket/events";
 import {
+  connectSocket,
   joinVideoRoom,
   leaveVideoRoom,
 } from "../socket/video.socket";
@@ -14,37 +15,54 @@ export const useVideoSocket = ({ bookingId, role }) => {
 
   useEffect(() => {
     if (!bookingId || !role) return;
+    const isWaitingRole = role.includes("waiting");
 
-    // Join room
-    joinVideoRoom({ bookingId, role });
+    connectSocket();
+
+    if (!isWaitingRole) {
+      joinVideoRoom({ bookingId, role });
+    }
 
     // --- Listeners ---
-    socket.on(SOCKET_EVENTS.CALL_STARTED, () => {
-      setCallStarted(true);
-    });
+    const handleCallStarted = ({ roomId } = {}) => {
+      if (!roomId || roomId === bookingId) {
+        setCallStarted(true);
+      }
+    };
 
-    socket.on(SOCKET_EVENTS.CALL_ENDED, () => {
-      setCallEnded(true);
-    });
+    const handleCallEnded = ({ roomId } = {}) => {
+      if (!roomId || roomId === bookingId) {
+        setCallEnded(true);
+      }
+    };
 
-    socket.on(SOCKET_EVENTS.USER_JOINED, (data) => {
+    const handleUserJoined = (data) => {
+      if (data?.roomId && data.roomId !== bookingId) return;
       setParticipants((prev) => [...prev, data]);
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.USER_LEFT, (data) => {
+    const handleUserLeft = (data) => {
+      if (data?.roomId && data.roomId !== bookingId) return;
       setParticipants((prev) =>
         prev.filter((p) => p.socketId !== data.socketId)
       );
-    });
+    };
+
+    socket.on(SOCKET_EVENTS.CALL_STARTED, handleCallStarted);
+    socket.on(SOCKET_EVENTS.CALL_ENDED, handleCallEnded);
+    socket.on(SOCKET_EVENTS.USER_JOINED, handleUserJoined);
+    socket.on(SOCKET_EVENTS.USER_LEFT, handleUserLeft);
 
     // --- Cleanup ---
     return () => {
-      leaveVideoRoom(bookingId);
+      if (!isWaitingRole) {
+        leaveVideoRoom(bookingId);
+      }
 
-      socket.off(SOCKET_EVENTS.CALL_STARTED);
-      socket.off(SOCKET_EVENTS.CALL_ENDED);
-      socket.off(SOCKET_EVENTS.USER_JOINED);
-      socket.off(SOCKET_EVENTS.USER_LEFT);
+      socket.off(SOCKET_EVENTS.CALL_STARTED, handleCallStarted);
+      socket.off(SOCKET_EVENTS.CALL_ENDED, handleCallEnded);
+      socket.off(SOCKET_EVENTS.USER_JOINED, handleUserJoined);
+      socket.off(SOCKET_EVENTS.USER_LEFT, handleUserLeft);
     };
   }, [bookingId, role]);
 

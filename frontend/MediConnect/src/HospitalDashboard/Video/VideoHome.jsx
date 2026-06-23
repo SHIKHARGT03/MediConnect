@@ -2,10 +2,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import {
-  emitCallStarted,
-  connectSocket,
-} from "../../socket/video.socket";
 import { useNavigate } from "react-router-dom";
 
 const API = axios.create({
@@ -77,11 +73,6 @@ const VideoHome = () => {
     try {
       setStartingId(bookingId);
 
-      // 1️⃣ Connect socket & emit event
-      connectSocket();
-      emitCallStarted(bookingId);
-
-      // 2️⃣ Update backend status → call_started
       await API.put(
         `/bookings/${bookingId}/start-call`,
         {},
@@ -90,7 +81,6 @@ const VideoHome = () => {
           : undefined
       );
 
-      // 3️⃣ Navigate doctor to call room
       navigate(`/hospital/video/call/${bookingId}`);
     } catch (err) {
       console.error("Failed to start call:", err);
@@ -157,11 +147,11 @@ const Info = ({ label, value }) => (
 
 const styles = {
   page: {
-    width: "100vw",
+    width: "100%",
     minHeight: "100vh",
   },
   hero: {
-    width: "100vw",
+    width: "100%",
     minHeight: "50vh",
     background: "linear-gradient(135deg, #fafdff 0%, #eaf3fa 100%)",
     display: "flex",
@@ -174,7 +164,7 @@ const styles = {
   },
 
   heroText: {
-    fontSize: "3.2rem",
+    fontSize: "clamp(2.2rem, 5vw, 3.2rem)",
     fontWeight: "800",
     color: "#000",
   },
@@ -190,6 +180,7 @@ const styles = {
     flexDirection: "column",
     gap: "28px",
     maxWidth: "1400px",
+    margin: "0 auto",
   },
 
   card: {

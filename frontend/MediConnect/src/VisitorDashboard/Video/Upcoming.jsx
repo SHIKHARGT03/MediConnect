@@ -25,7 +25,9 @@ const Upcoming = () => {
         const filtered = (Array.isArray(data) ? data : []).filter(
           (b) =>
             b.type === "videoConsultation" &&
-            (b.status || "").toLowerCase() === "accepted"
+            ["accepted", "call_started"].includes(
+              (b.status || "").toLowerCase()
+            )
         );
 
         setCalls(filtered);
@@ -74,7 +76,7 @@ export default Upcoming;
 const VideoCallCard = ({ call }) => {
   const { callStarted } = useVideoSocket({
     bookingId: call.bookingId,
-    role: "patient",
+    role: "patient-waiting",
   });
 
   const navigate = useNavigate();
@@ -92,7 +94,7 @@ const VideoCallCard = ({ call }) => {
 
       {/* RIGHT ACTION */}
       <div style={styles.right}>
-        {callStarted ? (
+        {callStarted || (call.status || "").toLowerCase() === "call_started" ? (
           <button
             style={styles.joinBtn}
             onClick={() => navigate(`/visitor/records/call/${call.bookingId}`)}

@@ -7,6 +7,7 @@ import Schedule from "./Schedule/Schedule";
 import Video from "./Video/Video";
 import CallRoom from "./Video/CallRoom";
 import TopDoctorsByCategory from "./Appointment/TopDoctorsByCategory";
+import TopDoctorsBySymptom from "./Appointment/TopDoctorsBySymptom";
 
 const contentWrapperStyle = {
   paddingTop: "70px",
@@ -26,6 +27,7 @@ const VisitorRoutes = () => {
           {/* New route for patient's call room */}
           <Route path="records/call/:bookingId" element={<CallRoom />} />
           <Route path="category/:department" element={<TopDoctorsByCategory />} />
+          <Route path="symptom/:symptomName" element={<TopDoctorsBySymptom />} />
         </Routes>
       </div>
     </>

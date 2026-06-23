@@ -35,12 +35,13 @@ const labelMap = {
 
 const containerStyle = {
   width: "100%",
-  height: "100%",
+  minHeight: "100%",
   background: "#ffffff",
-  padding: "32px 48px",
+  padding: "clamp(24px, 4vw, 32px) clamp(20px, 5vw, 48px)",
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
+  boxSizing: "border-box",
 };
 
 // (styling kept inline where needed)
@@ -101,12 +102,12 @@ const Heart = () => {
     <div style={containerStyle}>
       <style>
         {`
-          .mlp-input::placeholder { color: #ffffff; opacity: 1; }
+          .mlp-input::placeholder { color: #777777; opacity: 1; }
         `}
       </style>
 
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
           <div>
             <h2 style={{ fontWeight: 700 }}>Heart Failure</h2>
             <p style={{ color: "#555" }}>Clinical screening based on vitals and ECG data</p>
@@ -117,7 +118,7 @@ const Heart = () => {
             placeholder="Booking ID (optional)"
             value={bookingId}
             onChange={(e) => setBookingId(e.target.value)}
-            style={{ width: "180px", padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }}
+            style={{ width: "180px", maxWidth: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }}
             className="mlp-input"
           />
         </div>
@@ -154,7 +155,7 @@ const Heart = () => {
             </>
           )}
         </div>
-        {error && <div style={{ marginTop: 12, color: "#ffb4b4" }}>{error}</div>}
+        {error && <div style={{ marginTop: 12, color: "#b42318" }}>{error}</div>}
       </div>
 
       <div>

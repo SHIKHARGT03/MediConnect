@@ -8,7 +8,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     // TODO: Clear tokens/session storage if used
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -59,13 +59,14 @@ const Navbar = () => {
 
 const styles = {
   navbar: {
-    width: "100vw",
-    height: "70px",
+    width: "100%",
+    minHeight: "70px",
     backgroundColor: "#ffffff",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     padding: "0 30px",
+    boxSizing: "border-box",
     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
     position: "fixed",
     top: 0,
@@ -73,7 +74,7 @@ const styles = {
     zIndex: 999,
   },
   left: { flex: 1 },
-  center: { flex: 2, display: "flex", justifyContent: "center", gap: "40px" },
+  center: { flex: 2, display: "flex", justifyContent: "center", gap: "clamp(16px, 3vw, 40px)", flexWrap: "wrap" },
   right: { flex: 1, display: "flex", justifyContent: "flex-end" },
   logo: { fontSize: "1.8rem", fontWeight: "700", color: "#6f42c1", textDecoration: "none" },
   link: { textDecoration: "none", color: "#000000", fontSize: "1rem", fontWeight: "400", transition: "0.3s", padding: "6px 10px", borderRadius: "6px" },

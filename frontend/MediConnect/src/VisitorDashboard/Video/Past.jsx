@@ -5,6 +5,7 @@ import {
   getBookingsForPatient,
   createFollowUpBooking,
 } from "../../api/booking";
+import SuccessNotice from "../../components/SuccessNotice";
 
 const BRAND = "#6f42c1";
 const RED = "#dc3545";
@@ -21,6 +22,9 @@ const Past = () => {
   const [loading, setLoading] = useState(true);
   const [hospitalNames, setHospitalNames] = useState({});
   const [followUpLoading, setFollowUpLoading] = useState(null);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
 
   // Prescription modal (same UX as Schedule/Past.jsx)
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -100,15 +104,34 @@ const Past = () => {
     }
   };
 
-  // Follow Up
-  const handleFollowUp = async (bookingId) => {
+  const isFollowUpEligible = (bookingDate) => {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const parsedDate = new Date(`${bookingDate}T00:00:00`);
+    const sevenDaysAgo = new Date(startOfToday);
+    sevenDaysAgo.setDate(startOfToday.getDate() - 7);
+    return parsedDate >= sevenDaysAgo && parsedDate <= startOfToday;
+  };
+
+  const handleFollowUp = async (booking) => {
+    if (!isFollowUpEligible(booking.date)) {
+      setNoticeTitle("Follow-up unavailable");
+      setNoticeMessage("Follow-up requests are available only for visits from the last 7 days.");
+      setNoticeOpen(true);
+      return;
+    }
+
     try {
-      setFollowUpLoading(bookingId);
-      await createFollowUpBooking(bookingId);
-      alert("Follow-up booking created successfully!");
+      setFollowUpLoading(booking.bookingId);
+      const res = await createFollowUpBooking(booking.bookingId);
+      setNoticeTitle("Follow-up request created");
+      setNoticeMessage(`Follow-up scheduled for ${new Date(res?.booking?.date || booking.date).toLocaleDateString()}. Booking ID: ${res?.booking?.bookingId || booking.bookingId}`);
+      setNoticeOpen(true);
     } catch (err) {
       console.error("Error creating follow-up booking:", err);
-      alert("Failed to create follow-up booking.");
+      setNoticeTitle("Follow-up failed");
+      setNoticeMessage("We could not create the follow-up request right now.");
+      setNoticeOpen(true);
     } finally {
       setFollowUpLoading(null);
     }
@@ -171,20 +194,29 @@ const Past = () => {
               >
                 View Prescription
               </button>
-              <button
-                style={{
-                  ...styles.dangerBtn,
-                  opacity: followUpLoading === call.bookingId ? 0.7 : 1,
-                }}
-                onClick={() => handleFollowUp(call.bookingId)}
-                disabled={followUpLoading === call.bookingId}
-              >
-                Follow Up
-              </button>
+              {isFollowUpEligible(call.date) ? (
+                <button
+                  style={{
+                    ...styles.dangerBtn,
+                    opacity: followUpLoading === call.bookingId ? 0.7 : 1,
+                  }}
+                  onClick={() => handleFollowUp(call)}
+                  disabled={followUpLoading === call.bookingId}
+                >
+                  Follow Up
+                </button>
+              ) : null}
             </div>
           </div>
         ))}
       </div>
+
+      <SuccessNotice
+        open={noticeOpen}
+        title={noticeTitle}
+        message={noticeMessage}
+        onClose={() => setNoticeOpen(false)}
+      />
 
       {/* Prescription Note Modal (same as Schedule/Past.jsx) */}
       {showPrescriptionModal && (
@@ -286,6 +318,7 @@ const styles = {
     gap: "12px",
     alignItems: "center",
     justifyContent: "center",
+    margin: "0 auto",
   },
   primaryBtn: {
     backgroundColor: BRAND,

@@ -8,7 +8,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     // TODO: Remove tokens / session logic
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -29,7 +29,7 @@ const Navbar = () => {
         <Link to="/visitor/schedule" style={{ ...styles.link, ...(location.pathname === "/visitor/schedule" ? styles.active : {}) }}>
           Schedule
         </Link>
-        <Link to="/visitor/records" style={{ ...styles.link, ...(location.pathname === "/visitor/video" ? styles.active : {}) }}>
+        <Link to="/visitor/records" style={{ ...styles.link, ...(location.pathname.startsWith("/visitor/records") ? styles.active : {}) }}>
           Video Consultation
         </Link>
       </div>
@@ -44,13 +44,14 @@ const Navbar = () => {
 
 const styles = {
   navbar: {
-    width: "100vw",
-    height: "70px",
+    width: "100%",
+    minHeight: "70px",
     backgroundColor: "#ffffff",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     padding: "0 30px",
+    boxSizing: "border-box",
     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
     position: "fixed", // changed from sticky to fixed
     top: 0,
@@ -64,7 +65,8 @@ const styles = {
     flex: 2,
     display: "flex",
     justifyContent: "center",
-    gap: "40px",
+    gap: "clamp(16px, 3vw, 40px)",
+    flexWrap: "wrap",
   },
   right: {
     flex: 1,

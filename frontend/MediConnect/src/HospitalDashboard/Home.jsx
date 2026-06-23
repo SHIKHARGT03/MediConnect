@@ -16,6 +16,7 @@ const Home = () => {
   const [token, setToken] = useState("");
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [flashStatus, setFlashStatus] = useState("");
 
   // ======== UTIL: read login payload robustly
   const readHospitalAuth = () => {
@@ -72,6 +73,12 @@ const Home = () => {
     if (hospitalId) fetchBookings(hospitalId);
   }, [hospitalId]);
 
+  useEffect(() => {
+    if (!flashStatus) return;
+    const timer = window.setTimeout(() => setFlashStatus(""), 2000);
+    return () => window.clearTimeout(timer);
+  }, [flashStatus]);
+
   // ======== DERIVED COUNTS
   const { pendingCount, acceptedCount, rejectedCount } = useMemo(() => {
     const p = bookings.filter(
@@ -96,6 +103,7 @@ const Home = () => {
         authHeaders
       );
       await fetchBookings(hospitalId);
+      setFlashStatus(newStatus);
     } catch (err) {
       console.error(`Error updating booking ${bookingId} -> ${newStatus}`, err);
     }
@@ -109,7 +117,7 @@ const Home = () => {
 
   // ======== STYLES
   const css = `
-    .hospital-home { width: 100vw; min-height: 100vh; }
+    .hospital-home { width: 100%; min-height: 100vh; }
     .hero {
       min-height: 42vh; width: 100%;
       background: linear-gradient(135deg, #f5faff 0%, #eef7ff 100%);
@@ -137,7 +145,26 @@ const Home = () => {
   padding: 28px 36px;    /* ⬅️ bigger padding */
   box-shadow: 0 8px 20px rgba(0,0,0,0.08); /* more elegant shadow */
   min-width: 220px;      /* ⬅️ was 190px, wider cards */
+  transition: all 0.25s ease;
 }
+    .stat-card.flash-accepted {
+      background: #ecfdf3;
+      border: 1px solid #a7f3d0;
+      box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.14), 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .stat-card.flash-accepted .stat-label,
+    .stat-card.flash-accepted .stat-value {
+      color: #198754;
+    }
+    .stat-card.flash-rejected {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.14), 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .stat-card.flash-rejected .stat-label,
+    .stat-card.flash-rejected .stat-value {
+      color: #dc3545;
+    }
     .stat-label {
   font-weight: 700;
   font-size: 1.1rem;     /* ⬅️ was 0.95rem, more readable */
@@ -209,11 +236,11 @@ const Home = () => {
               <div className="stat-label">Pending</div>
               <div className="stat-value">{pendingCount}</div>
             </div>
-            <div className="stat-card me-3 mb-3">
+            <div className={`stat-card me-3 mb-3 ${flashStatus === "accepted" ? "flash-accepted" : ""}`}>
               <div className="stat-label">Accepted</div>
               <div className="stat-value">{acceptedCount}</div>
             </div>
-            <div className="stat-card mb-3">
+            <div className={`stat-card mb-3 ${flashStatus === "rejected" ? "flash-rejected" : ""}`}>
               <div className="stat-label">Rejected</div>
               <div className="stat-value">{rejectedCount}</div>
             </div>

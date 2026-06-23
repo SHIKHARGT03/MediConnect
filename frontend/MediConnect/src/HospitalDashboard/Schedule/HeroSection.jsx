@@ -12,7 +12,9 @@ const readHospitalAuth = () => {
       if (!raw) continue;
       const obj = JSON.parse(raw);
       if (obj && obj.hospitalId) return obj;
-    } catch (_) {}
+    } catch {
+      // Ignore malformed auth entries and try the next key.
+    }
   }
   return null;
 };
@@ -59,7 +61,7 @@ const HeroSection = ({ hospitalId: propHospitalId }) => {
 
   const styles = {
     hero: {
-      width: "100vw",
+      width: "100%",
       minHeight: "50vh",
       background: "linear-gradient(135deg, #fafdff 0%, #eaf3fa 100%)",
       display: "flex",

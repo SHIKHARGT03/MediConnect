@@ -76,14 +76,14 @@ const LandingPage = () => {
 const styles = {
   container: {
     backgroundColor: "#f5f5f7",
-    width: "100vw",
-    height: "100vh",
+    width: "100%",
+    minHeight: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center", // Center vertically
     padding: "0",
     boxSizing: "border-box",
-    overflow: "hidden", // Prevent scroll
+    overflowX: "hidden",
   },
   content: {
     textAlign: "center",
@@ -91,7 +91,7 @@ const styles = {
     margin: "0 auto",
   },
   heading: {
-    fontSize: "8rem", // Slightly smaller for balance
+    fontSize: "clamp(3.5rem, 10vw, 8rem)",
     fontWeight: "900",
     marginBottom: "30px",
     letterSpacing: "1px",
@@ -122,7 +122,7 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    flexWrap: "nowrap", // Cards side by side
+    flexWrap: "wrap",
     gap: "60px", // Consistent gap
   },
   roleBox: {

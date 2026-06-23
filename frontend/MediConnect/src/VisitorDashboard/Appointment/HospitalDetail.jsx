@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { getDoctorsByDepartment } from "../../api/doctor";
 import axios from "axios";
 import { FaCalendarAlt } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
-import { v4 as uuidv4 } from "uuid";
+import SuccessNotice from "../../components/SuccessNotice";
 
 
 const HospitalDetail = () => {
   const { hospitalId } = useParams();
+  const location = useLocation();
   const [hospital, setHospital] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [doctors, setDoctors] = useState([]);
@@ -16,6 +17,9 @@ const HospitalDetail = () => {
   const [availabilityShown, setAvailabilityShown] = useState({});
   const [selectedDate, setSelectedDate] = useState({});
   const [selectedSlot, setSelectedSlot] = useState({});
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeMessage, setNoticeMessage] = useState("");
 
   // Always get patientId like this:
   const storedUser = JSON.parse(localStorage.getItem("userInfo") || localStorage.getItem("user"));
@@ -36,14 +40,22 @@ const HospitalDetail = () => {
         const res = await axios.get(
           `http://localhost:5000/api/hospitals/${hospitalId}`
         );
-        setHospital(res.data);
-        setSelectedDepartment(res.data.departments[0]);
+        const hospitalData = res.data;
+        setHospital(hospitalData);
+
+        const params = new URLSearchParams(location.search);
+        const requestedDepartment = params.get("department");
+        const matchedDepartment = hospitalData.departments?.find(
+          (dept) => dept?.toLowerCase() === requestedDepartment?.toLowerCase()
+        );
+
+        setSelectedDepartment(matchedDepartment || hospitalData.departments?.[0] || "");
       } catch (err) {
         console.error("❌ Error fetching hospital:", err);
       }
     };
     fetchHospital();
-  }, [hospitalId]);
+  }, [hospitalId, location.search]);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -91,38 +103,41 @@ const HospitalDetail = () => {
 
   // ✅ Updated booking function as per your prompt
   const handleBookSlot = (doctor, index) => {
-  const bookingData = {
-    patientId,
-    hospitalId: hospital?.hospitalId || hospitalId,
-    department: doctor?.department || selectedDepartment,
-    doctorName: doctor?.name || "Dr. Rakesh Sharma",
-    type: "appointment",
-    date: selectedDate[index],
-    time: selectedSlot[index],
-    status: "pending",
+    const bookingData = {
+      patientId,
+      hospitalId: hospital?.hospitalId || hospitalId,
+      department: doctor?.department || selectedDepartment,
+      doctorName: doctor?.name || "Dr. Rakesh Sharma",
+      type: "appointment",
+      date: selectedDate[index],
+      time: selectedSlot[index],
+      status: "pending",
+    };
+
+    const missingFields = Object.entries(bookingData)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      setNoticeTitle("Booking incomplete");
+      setNoticeMessage(`Please choose: ${missingFields.join(", ")}`);
+      setNoticeOpen(true);
+      return;
+    }
+
+    createBookingRequest(bookingData)
+      .then((res) => {
+        localStorage.setItem("lastBookingId", res.booking.bookingId);
+        setNoticeTitle("Booking request sent successfully");
+        setNoticeMessage(`Booking ID: ${res.booking.bookingId}`);
+        setNoticeOpen(true);
+      })
+      .catch(() => {
+        setNoticeTitle("Booking failed");
+        setNoticeMessage("We could not complete your booking. Please try again.");
+        setNoticeOpen(true);
+      });
   };
-
-  console.log("📌 Booking data to send:", bookingData);
-
-  const missingFields = Object.entries(bookingData)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
-
-  if (missingFields.length > 0) {
-    alert(`Missing fields: ${missingFields.join(", ")}`);
-    return;
-  }
-
-  createBookingRequest(bookingData)
-    .then((res) => {
-      alert("Booking request sent! Your Booking ID: " + res.booking.bookingId);
-      // Optionally save bookingId to localStorage for later use
-      localStorage.setItem("lastBookingId", res.booking.bookingId);
-    })
-    .catch((err) => {
-      alert("Failed to book slot.");
-    });
-};
 
 
   return (
@@ -312,6 +327,13 @@ const HospitalDetail = () => {
           ))
         )}
       </div>
+
+      <SuccessNotice
+        open={noticeOpen}
+        title={noticeTitle}
+        message={noticeMessage}
+        onClose={() => setNoticeOpen(false)}
+      />
     </div>
   );
 };
@@ -320,7 +342,7 @@ const styles = {
   heroWrapper: {
     position: "relative",
     height: "75vh",
-    width: "100vw",
+    width: "100%",
     overflow: "hidden",
   },
   heroImage: {
@@ -361,7 +383,7 @@ const styles = {
     marginBottom: "10px",
   },
   hospitalName: {
-    fontSize: "3.5rem",
+    fontSize: "clamp(2.2rem, 6vw, 3.5rem)",
     fontWeight: "bold",
   },
 };

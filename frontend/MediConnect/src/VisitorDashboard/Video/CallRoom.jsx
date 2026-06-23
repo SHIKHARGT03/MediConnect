@@ -1,12 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate, useParams } from "react-router-dom";
 import { socket } from "../../socket";
-import { createPeerConnection } from "../../webrtc/peer";
-import { getMediaStream } from "../../webrtc/media";
-import { useParams, useNavigate } from "react-router-dom";
 import { joinVideoRoom, leaveVideoRoom } from "../../socket/video.socket";
+import { getMediaStream } from "../../webrtc/media";
+import { createPeerConnection } from "../../webrtc/peer";
 
-function CallRoom() {
+const getPermissionMessage = (err) => {
+  if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
+    return "Camera or microphone is blocked. Allow access in the browser address bar, then retry.";
+  }
+
+  if (err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError") {
+    return "No camera or microphone was found on this device.";
+  }
+
+  return "Could not start camera and microphone.";
+};
+
+const CallRoom = () => {
   const { bookingId } = useParams();
   const navigate = useNavigate();
 
@@ -14,51 +26,113 @@ function CallRoom() {
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
   const localStreamRef = useRef(null);
-  // Removed unused variable to satisfy ESLint:
-  // const pendingOfferRef = useRef(null);
+  const pendingIceRef = useRef([]);
 
   const [micOn, setMicOn] = useState(true);
   const [cameraOn, setCameraOn] = useState(true);
-  const [statusText, setStatusText] = useState("Waiting for doctor to start…");
+  const [statusText, setStatusText] = useState("Preparing camera and microphone...");
+  const [mediaError, setMediaError] = useState("");
+  const [remoteConnected, setRemoteConnected] = useState(false);
+
+  const flushPendingIce = useCallback(async () => {
+    if (!peerRef.current?.remoteDescription) return;
+
+    const queued = pendingIceRef.current.splice(0);
+    for (const candidate of queued) {
+      try {
+        await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.error("Failed to add queued ICE candidate:", err);
+      }
+    }
+  }, []);
+
+  const addRemoteIceCandidate = useCallback(async (candidate) => {
+    if (!candidate) return;
+
+    if (!peerRef.current?.remoteDescription) {
+      pendingIceRef.current.push(candidate);
+      return;
+    }
+
+    try {
+      await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (err) {
+      console.error("Failed to add ICE candidate:", err);
+    }
+  }, []);
+
+  const attachLocalStream = useCallback(async () => {
+    const stream = await getMediaStream();
+    localStreamRef.current = stream;
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+
+    const peer = createPeerConnection(
+      (candidate) => {
+        socket.emit("webrtc-ice-candidate", {
+          roomId: bookingId,
+          candidate,
+        });
+      },
+      (remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
+        setRemoteConnected(true);
+        setStatusText("Connected with doctor");
+      }
+    );
+
+    peer.onconnectionstatechange = () => {
+      if (peer.connectionState === "connected") {
+        setRemoteConnected(true);
+        setStatusText("Connected with doctor");
+      }
+
+      if (["failed", "disconnected"].includes(peer.connectionState)) {
+        setStatusText("Connection interrupted. Waiting for reconnection...");
+      }
+    };
+
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+    peerRef.current = peer;
+  }, [bookingId]);
+
+  const startRoom = useCallback(async () => {
+    try {
+      setMediaError("");
+      setStatusText("Preparing camera and microphone...");
+
+      peerRef.current?.close();
+      peerRef.current = null;
+      pendingIceRef.current = [];
+
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+
+      await attachLocalStream();
+
+      joinVideoRoom({ bookingId, role: "patient" });
+      setStatusText("Waiting for doctor to connect...");
+    } catch (err) {
+      console.error("Error starting patient video room:", err);
+      setMediaError(getPermissionMessage(err));
+      setStatusText("Camera and microphone are not available");
+    }
+  }, [attachLocalStream, bookingId]);
 
   useEffect(() => {
-    joinVideoRoom({ bookingId, role: "patient" });
+    const handleOffer = async ({ offer }) => {
+      if (!offer || !peerRef.current) return;
 
-    socket.on("user-joined", ({ role }) => {
-      if (role === "hospital") setStatusText("Doctor joined, preparing…");
-    });
-
-    // Doctor starts → we receive offer
-    socket.on("webrtc-offer", async ({ offer }) => {
       try {
-        if (!localStreamRef.current) {
-          const stream = await getMediaStream();
-          localStreamRef.current = stream;
-          localVideoRef.current.srcObject = stream;
-        }
+        setStatusText("Doctor joined. Connecting...");
+        await peerRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+        await flushPendingIce();
 
-        if (!peerRef.current) {
-          peerRef.current = createPeerConnection(
-            (candidate) => {
-              socket.emit("webrtc-ice-candidate", {
-                roomId: bookingId,
-                candidate,
-              });
-            },
-            (remoteStream) => {
-              remoteVideoRef.current.srcObject = remoteStream;
-              setStatusText("Connected with doctor");
-            }
-          );
-
-          localStreamRef.current.getTracks().forEach((track) =>
-            peerRef.current.addTrack(track, localStreamRef.current)
-          );
-        }
-
-        await peerRef.current.setRemoteDescription(
-          new RTCSessionDescription(offer)
-        );
         const answer = await peerRef.current.createAnswer();
         await peerRef.current.setLocalDescription(answer);
 
@@ -66,107 +140,125 @@ function CallRoom() {
           roomId: bookingId,
           answer,
         });
-
-        setStatusText("Connecting…");
       } catch (err) {
-        console.error("Error handling offer:", err);
-        setStatusText("Connection failed");
+        console.error("Error handling WebRTC offer:", err);
+        setStatusText("Failed to complete connection.");
       }
-    });
+    };
 
-    socket.on("webrtc-ice-candidate", ({ candidate }) => {
-      if (candidate) {
-        peerRef.current
-          ?.addIceCandidate(new RTCIceCandidate(candidate))
-          .catch(console.error);
+    const handleIceCandidate = ({ candidate }) => {
+      addRemoteIceCandidate(candidate);
+    };
+
+    const handleUserLeft = ({ role }) => {
+      if (role === "hospital") {
+        setRemoteConnected(false);
+        setStatusText("Doctor left the call.");
       }
-    });
+    };
 
-    // Only the backend controller emits this, so it won’t fire prematurely now
-    socket.on("call-ended", () => {
+    const handleCallEnded = () => {
       cleanup();
       navigate("/visitor/records?tab=past");
-    });
+    };
 
-    return () => cleanup();
-    // eslint-disable-next-line
-  }, [bookingId]);
+    const cleanup = () => {
+      leaveVideoRoom(bookingId);
+      peerRef.current?.close();
+      peerRef.current = null;
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
 
-  const cleanup = () => {
-    socket.off("user-joined");
-    socket.off("webrtc-offer");
-    socket.off("webrtc-ice-candidate");
-    socket.off("call-ended");
+      if (localVideoRef.current) localVideoRef.current.srcObject = null;
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    };
 
-    peerRef.current?.close();
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    socket.on("webrtc-offer", handleOffer);
+    socket.on("webrtc-ice-candidate", handleIceCandidate);
+    socket.on("user-left", handleUserLeft);
+    socket.on("call-ended", handleCallEnded);
 
-    leaveVideoRoom(bookingId);
-    setStatusText("Call ended");
-  };
+    startRoom();
 
-  // 🎤 Toggle mic
+    return () => {
+      socket.off("webrtc-offer", handleOffer);
+      socket.off("webrtc-ice-candidate", handleIceCandidate);
+      socket.off("user-left", handleUserLeft);
+      socket.off("call-ended", handleCallEnded);
+      cleanup();
+    };
+  }, [
+    addRemoteIceCandidate,
+    bookingId,
+    flushPendingIce,
+    navigate,
+    startRoom,
+  ]);
+
   const toggleMic = () => {
+    const next = !micOn;
     localStreamRef.current
       ?.getAudioTracks()
-      .forEach((t) => (t.enabled = !micOn));
-    setMicOn((v) => !v);
+      .forEach((track) => {
+        track.enabled = next;
+      });
+    setMicOn(next);
   };
 
-  // 🎥 Toggle camera
   const toggleCamera = () => {
+    const next = !cameraOn;
     localStreamRef.current
       ?.getVideoTracks()
-      .forEach((t) => (t.enabled = !cameraOn));
-    setCameraOn((v) => !v);
+      .forEach((track) => {
+        track.enabled = next;
+      });
+    setCameraOn(next);
+  };
+
+  const leaveCall = () => {
+    leaveVideoRoom(bookingId);
+    peerRef.current?.close();
+    localStreamRef.current?.getTracks().forEach((track) => track.stop());
+    navigate("/visitor/records");
   };
 
   return (
     <div style={styles.page}>
-      {/* STATUS BAR */}
       <div style={styles.statusBar}>
         <span style={styles.statusText}>{statusText}</span>
       </div>
 
-      {/* VIDEO AREA */}
       <div style={styles.videoArea}>
-        {/* Doctor Video */}
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          style={styles.mainVideo}
-        />
+        <video ref={remoteVideoRef} autoPlay playsInline style={styles.mainVideo} />
 
-        {/* Patient Preview (only visible once camera starts) */}
-        <video
-          ref={localVideoRef}
-          autoPlay
-          muted
-          playsInline
-          style={styles.selfVideo}
-        />
+        {!remoteConnected && (
+          <div style={styles.remotePlaceholder}>
+            <div style={styles.placeholderTitle}>Waiting for doctor video</div>
+            <div style={styles.placeholderText}>The call will connect once both sides are ready.</div>
+          </div>
+        )}
+
+        {mediaError && (
+          <div style={styles.errorPanel}>
+            <strong>{mediaError}</strong>
+            <button style={styles.retryBtn} onClick={startRoom}>
+              Retry
+            </button>
+          </div>
+        )}
+
+        <video ref={localVideoRef} autoPlay muted playsInline style={styles.selfVideo} />
       </div>
 
-      {/* CONTROLS */}
       <div style={styles.controls}>
         <button style={styles.iconBtn} onClick={toggleMic} aria-label="Toggle microphone">
-          {/* Mic SVG */}
-          {micOn ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zM11 19h2v3h-2v-3z"/></svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M19 11a7 7 0 0 1-12.5 4.5l1.5-1.5A5 5 0 0 0 17 11h2zM12 14a3 3 0 0 0 3-3V8.41l-6.29 6.3A2.99 2.99 0 0 0 12 14zM9 5a3 3 0 0 1 5.12-2.12L9 8.99V5zM11 19h2v3h-2v-3z"/></svg>
-          )}
+          {micOn ? "Mic On" : "Mic Off"}
         </button>
         <button style={styles.iconBtn} onClick={toggleCamera} aria-label="Toggle camera">
-          {/* Camera SVG */}
-          {cameraOn ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M17 10.5l4-3v9l-4-3V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2.5z"/></svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M2 4.27L3.27 3 21 20.73 19.73 22l-3.29-3.29A2 2 0 0 1 16 19H5a2 2 0 0 1-2-2V8c0-.53.21-1.04.59-1.41L2 4.27zM17 10.5l4-3v9l-3.11-2.33L17 13.5V10.5z"/></svg>
-          )}
+          {cameraOn ? "Cam On" : "Cam Off"}
+        </button>
+        <button style={styles.leaveBtn} onClick={leaveCall}>
+          Leave Call
         </button>
       </div>
     </div>
@@ -175,73 +267,129 @@ function CallRoom() {
 
 const styles = {
   page: {
-    width: "100vw",
-    height: "100vh",
+    width: "100%",
+    height: "calc(100vh - 70px)",
+    minHeight: 560,
     background: "#000",
     display: "flex",
     flexDirection: "column",
   },
-
   statusBar: {
-    height: "56px",
-    background: "#0f0f10",
-    color: "#e9eaee",
+    minHeight: 56,
+    background: "#101113",
+    color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "600",
-    borderBottom: "1px solid #1c1d20",
+    padding: "10px 18px",
+    fontWeight: 700,
+    textAlign: "center",
   },
-
   statusText: {
-    fontSize: "1.05rem",
-    letterSpacing: "0.2px",
+    fontSize: "1rem",
   },
-
   videoArea: {
     flex: 1,
     position: "relative",
     background: "#000",
+    overflow: "hidden",
   },
-
   mainVideo: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
+    background: "#000",
   },
-
+  remotePlaceholder: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    background: "linear-gradient(180deg, #050505 0%, #111 100%)",
+    textAlign: "center",
+    padding: 24,
+  },
+  placeholderTitle: {
+    fontSize: "1.5rem",
+    fontWeight: 800,
+    marginBottom: 8,
+  },
+  placeholderText: {
+    color: "#c9c9c9",
+    fontWeight: 500,
+  },
+  errorPanel: {
+    position: "absolute",
+    top: 24,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "min(560px, calc(100% - 32px))",
+    background: "#fff",
+    color: "#111",
+    borderRadius: 10,
+    padding: 16,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 14,
+    boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
+    zIndex: 3,
+  },
+  retryBtn: {
+    border: "none",
+    background: "#6f42c1",
+    color: "#fff",
+    borderRadius: 8,
+    padding: "9px 14px",
+    fontWeight: 700,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
   selfVideo: {
     position: "absolute",
-    bottom: "20px",
-    right: "20px",
-    width: "240px",
-    height: "160px",
-    borderRadius: "14px",
+    right: 20,
+    bottom: 20,
+    width: "min(260px, 34vw)",
+    aspectRatio: "4 / 3",
+    borderRadius: 12,
     objectFit: "cover",
-    background: "#1c1d20",
-    border: "1px solid #2a2b30",
-    boxShadow: "0 10px 26px rgba(0,0,0,0.18)",
+    background: "#222",
+    border: "1px solid #333",
+    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+    zIndex: 2,
   },
-
   controls: {
-    height: "84px",
-    background: "#0f0f10",
+    minHeight: 92,
+    background: "#101113",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "18px",
-    borderTop: "1px solid #1c1d20",
+    gap: 16,
+    padding: "16px 12px",
+    flexWrap: "wrap",
   },
-
   iconBtn: {
-    width: "52px",
-    height: "52px",
-    borderRadius: "50%",
-    border: "1px solid #2a2b30",
-    background: "rgba(255,255,255,0.08)",
+    minWidth: 92,
+    height: 44,
+    borderRadius: 22,
+    border: "1px solid #2c2d31",
+    background: "#222327",
+    color: "#fff",
+    fontWeight: 700,
     cursor: "pointer",
-    display: "grid",
-    placeItems: "center",
+  },
+  leaveBtn: {
+    background: "#dc3545",
+    color: "#fff",
+    border: "none",
+    minWidth: 124,
+    height: 48,
+    borderRadius: 24,
+    fontWeight: 800,
+    cursor: "pointer",
   },
 };
 
