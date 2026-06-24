@@ -3,10 +3,15 @@ import registerVideoSocket from "./video.socket.js";
 
 let io = null;
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://mediconnect-bolton1.vercel.app",
+];
+
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: /^http:\/\/localhost:\d+$/,
+      origin: allowedOrigins,
       credentials: true,
     },
   });
