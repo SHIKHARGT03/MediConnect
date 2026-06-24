@@ -21,11 +21,6 @@ connectDB();
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://mediconnect-bolton1.vercel.app",
-];
-
 /**
  * --------------------
  * Middleware
@@ -34,7 +29,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        origin.includes("vercel.app") ||
+        origin === "http://localhost:5173"
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
