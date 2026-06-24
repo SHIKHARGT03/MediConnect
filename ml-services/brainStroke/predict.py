@@ -110,21 +110,45 @@ def load_legacy_h5_weights_exact(model, model_path):
             f"Only loaded {assigned} tensors from {model_path}; expected EfficientNetB0 backbone plus dense head."
         )
 
-try:
+# Lazy-loaded model
+model = None
+
+def get_model():
+    global model
+
+    if model is not None:
+        return model
+
     print(f"Loading model from {MODEL_PATH}...")
-    # Try standard load first, but it is known to fail with this H5
-    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-    print("Model loaded successfully with load_model.")
-except Exception as e:
-    print(f"Warning: load_model failed ({e}). Attempting manual reconstruction and weight loading.")
+
     try:
-        # Manual reconstruction (EfficientNetB0 + Custom Head)
+        model = tf.keras.models.load_model(
+            MODEL_PATH,
+            compile=False
+        )
+
+        print("Model loaded successfully with load_model.")
+
+    except Exception as e:
+
+        print(
+            f"Warning: load_model failed ({e}). "
+            "Attempting manual reconstruction and weight loading."
+        )
+
         model = build_manual_model("EfficientNetB0")
-        load_legacy_h5_weights_exact(model, MODEL_PATH)
-        print("Model weights loaded successfully into manually reconstructed EfficientNetB0.")
-    except Exception as e_manual:
-        print(f"Critical Error: Could not load model even with manual reconstruction. {e_manual}")
-        raise e_manual
+
+        load_legacy_h5_weights_exact(
+            model,
+            MODEL_PATH
+        )
+
+        print(
+            "Model weights loaded successfully into manually "
+            "reconstructed EfficientNetB0."
+        )
+
+    return model
 
 # --- Class Mapping ---
 try:
@@ -139,6 +163,8 @@ except Exception as e:
 # --- Prediction Function ---
 def predict_brain_stroke(img):
     # If img is a PIL Image (from app.py), use it directly
+    model = get_model()
+    
     if hasattr(img, 'size'):
         img = img.resize((224, 224))
         img = image.img_to_array(img)
