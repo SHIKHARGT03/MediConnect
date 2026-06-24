@@ -1,8 +1,6 @@
 // src/socket/index.js
 import { io } from "socket.io-client";
-
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+import { SOCKET_URL } from "../config/api";
 
 /**
  * Singleton socket instance

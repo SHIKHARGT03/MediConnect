@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { getPastBookingsForPatient, createFollowUpBooking } from "../../api/booking";
 import axios from "axios";
 import SuccessNotice from "../../components/SuccessNotice";
+import { API_BASE_URL } from "../../config/api";
 
 const BRAND = "#6f42c1";
 const RED = "#dc3545";
 const GRADIENT = "linear-gradient(180deg, #f8f9fa 0%, #ececec 100%)";
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_BASE_URL;
 
 const Past = ({ patientId }) => {
   const [bookings, setBookings] = useState([]);

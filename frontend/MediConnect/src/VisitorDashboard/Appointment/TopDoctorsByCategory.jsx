@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 
 const TopDoctorsByCategory = () => {
   const { department } = useParams();
@@ -12,7 +13,7 @@ const TopDoctorsByCategory = () => {
     const fetchDoctors = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/doctors/top-doctors-by-category/${encodeURIComponent(department)}`
+          `${API_BASE_URL}/api/doctors/top-doctors-by-category/${encodeURIComponent(department)}`
         );
         setDoctors(response.data);
       } catch (error) {

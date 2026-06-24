@@ -1,8 +1,9 @@
 // src/api/prescription.js
 import axios from "axios";
 import { getAuthToken } from "./auth"; // adapt to your auth helper
+import { API_BASE_URL } from "../config/api";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API_BASE = API_BASE_URL;
 
 export const uploadPrescriptionForBooking = async (bookingId, file, note) => {
   const url = `${API_BASE}/api/prescription/upload/${bookingId}`;

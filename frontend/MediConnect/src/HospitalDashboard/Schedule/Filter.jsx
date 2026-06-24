@@ -5,10 +5,10 @@ import { getPrescriptionByBooking } from "../../api/prescription";
 import { Button, Form } from "react-bootstrap";
 import axios from "axios";
 import SendPrescription from "./SendPrescription";
+import { API_BASE_URL } from "../../config/api";
 
 const BRAND = "#6f42c1";
-const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API_BASE = API_BASE_URL;
 const DEPARTMENTS = [
   "All",
   "Cardiology",

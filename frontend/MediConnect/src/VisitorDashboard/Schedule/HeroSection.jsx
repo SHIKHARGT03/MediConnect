@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { getBookingsForPatient } from "../../api/booking";
+import { API_BASE_URL } from "../../config/api";
 
 const BRAND = "#6f42c1";
 
@@ -39,7 +40,7 @@ const HeroSection = ({ bookings, setBookings }) => {
   const fetchHospitalName = async (hospitalId) => {
     if (!hospitalId || hospitalNames[hospitalId]) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/hospitals/${hospitalId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/hospitals/${hospitalId}`);
       const name = res?.data?.name || "";
       setHospitalNames((prev) => ({ ...prev, [hospitalId]: name }));
     } catch {

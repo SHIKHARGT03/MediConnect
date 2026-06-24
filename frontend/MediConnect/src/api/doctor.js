@@ -1,8 +1,9 @@
 // src/api/doctor.js
 import axios from 'axios';
+import { API_BASE_URL } from "../config/api";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${API_BASE_URL}/api`,
   withCredentials: true,
 });
 

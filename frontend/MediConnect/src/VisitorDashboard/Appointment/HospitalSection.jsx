@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 
 const HospitalSection = ({ selectedToggle }) => {
   const [hospitals, setHospitals] = useState([]);
@@ -9,7 +10,7 @@ const HospitalSection = ({ selectedToggle }) => {
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/hospitals");
+        const res = await axios.get(`${API_BASE_URL}/api/hospitals`);
         let data = res.data;
 
         if (selectedToggle === "lab") {

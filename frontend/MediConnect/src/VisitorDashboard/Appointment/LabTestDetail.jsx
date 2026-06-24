@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
 import SuccessNotice from "../../components/SuccessNotice";
+import { API_BASE_URL } from "../../config/api";
 
 const departmentTests = {
   Pathology: ["Blood Test", "Urine Test"],
@@ -104,7 +105,7 @@ const LabTestDetail = () => {
   useEffect(() => {
     const fetchHospital = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/hospitals/${hospitalId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/hospitals/${hospitalId}`);
         setHospital(res.data);
       } catch (err) {
         console.error("Error fetching hospital for lab tests:", err);

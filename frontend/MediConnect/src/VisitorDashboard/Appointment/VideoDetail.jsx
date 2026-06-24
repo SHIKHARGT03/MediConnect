@@ -5,6 +5,7 @@ import { FaCalendarAlt } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
 import { getDoctorsByDepartment } from "../../api/doctor";
 import SuccessNotice from "../../components/SuccessNotice";
+import { API_BASE_URL } from "../../config/api";
 
 const VideoDetail = () => {
   const { hospitalId } = useParams();
@@ -44,7 +45,7 @@ const VideoDetail = () => {
     const fetchHospital = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/hospitals/${hospitalId}`
+          `${API_BASE_URL}/api/hospitals/${hospitalId}`
         );
         setHospital(res.data);
         setSelectedDepartment(res.data.departments[0]);

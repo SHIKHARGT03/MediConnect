@@ -1,7 +1,8 @@
 // src/api/booking.js
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const baseURL = `${API_BASE_URL}/api`;
 
 const API = axios.create({
   baseURL,

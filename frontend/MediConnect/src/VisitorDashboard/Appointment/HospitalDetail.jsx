@@ -5,6 +5,7 @@ import axios from "axios";
 import { FaCalendarAlt } from "react-icons/fa";
 import { createBookingRequest } from "../../api/booking";
 import SuccessNotice from "../../components/SuccessNotice";
+import { API_BASE_URL } from "../../config/api";
 
 
 const HospitalDetail = () => {
@@ -38,7 +39,7 @@ const HospitalDetail = () => {
     const fetchHospital = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/hospitals/${hospitalId}`
+          `${API_BASE_URL}/api/hospitals/${hospitalId}`
         );
         const hospitalData = res.data;
         setHospital(hospitalData);

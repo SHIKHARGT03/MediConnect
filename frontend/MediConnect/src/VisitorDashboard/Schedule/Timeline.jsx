@@ -1,6 +1,7 @@
 // frontend/src/Schedule/Timeline.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 
 const BRAND = "#6f42c1";
 const LINE_COLOR = "#d8d0ee";
@@ -52,7 +53,7 @@ function TimelineHorizontal({ title, bookings }) {
 
     idsToFetch.forEach(async (id) => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/hospitals/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/api/hospitals/${id}`);
         setHospitalNames((prev) => ({ ...prev, [id]: res.data.name }));
       } catch {
         setHospitalNames((prev) => ({ ...prev, [id]: "Unknown Hospital" }));

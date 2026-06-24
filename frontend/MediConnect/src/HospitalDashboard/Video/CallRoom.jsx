@@ -6,9 +6,10 @@ import { socket } from "../../socket";
 import { joinVideoRoom, leaveVideoRoom } from "../../socket/video.socket";
 import { getMediaStream } from "../../webrtc/media";
 import { createPeerConnection } from "../../webrtc/peer";
+import { API_BASE_URL } from "../../config/api";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${API_BASE_URL}/api`,
   withCredentials: true,
 });
 

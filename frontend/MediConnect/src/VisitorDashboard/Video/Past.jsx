@@ -6,11 +6,12 @@ import {
   createFollowUpBooking,
 } from "../../api/booking";
 import SuccessNotice from "../../components/SuccessNotice";
+import { API_BASE_URL } from "../../config/api";
 
 const BRAND = "#6f42c1";
 const RED = "#dc3545";
 const GRADIENT = "linear-gradient(180deg, #f8f9fa 0%, #ececec 100%)";
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+const API_BASE = API_BASE_URL;
 
 const Past = () => {
   const storedUser = JSON.parse(

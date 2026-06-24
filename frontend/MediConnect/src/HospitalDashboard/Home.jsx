@@ -2,10 +2,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { API_BASE_URL } from "../config/api";
 
 // Create one axios instance pointing to your backend
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${API_BASE_URL}/api`,
   withCredentials: true,
 });
 
